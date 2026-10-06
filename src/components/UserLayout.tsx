@@ -55,7 +55,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   const [input, setInput] = useState('')
   const [model, setModel] = useState('mistral:latest')
   const [jailbreak, setJailbreak] = useState('default')
-  const [webAccess, setWebAccess] = useState(false)
+  const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
   const [isCreateWsOpen, setIsCreateWsOpen] = useState(false)
