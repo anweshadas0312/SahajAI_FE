@@ -35,6 +35,8 @@ export interface ChatMessage {
   id?: number
   role: 'user' | 'assistant' | 'system'
   content: string
+  files?: UploadedFile[]
+  isAutoPrompt?: boolean
   created_at?: string
 }
 
@@ -56,3 +58,13 @@ export interface AdminWorkspaceItem {
   conversation_count: number
   created_at: string
 }
+
+export interface UploadedFile {
+  id: string
+  original_name: string
+  file_size: number
+  mime_type?: string
+  status: 'uploading' | 'processing' | 'ready' | 'error'
+  error_message?: string
+}
+

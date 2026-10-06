@@ -19,10 +19,16 @@ import {
   Code,
   Terminal,
   Compass,
+  Paperclip,
+  FileText,
+  Loader2,
+  X,
+  ExternalLink,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { WorkspaceModal } from './WorkspaceModal'
+import type { UploadedFile } from '../types'
 
 interface UserLayoutProps {
   onSwitchToAdmin?: () => void
@@ -54,8 +60,85 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   const [isCreateWsOpen, setIsCreateWsOpen] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
 
+  const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([])
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const conversationIdRef = useRef<string>(currentConversationId || Math.random().toString(36).substring(2))
+
+  // Fetch attached files when conversation changes
+  useEffect(() => {
+    if (currentConversationId) {
+      const token = localStorage.getItem('sahaj_token')
+      if (token) {
+        fetch(`/api/files/conversation/${currentConversationId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.files) {
+              setAttachedFiles(data.files)
+            }
+          })
+          .catch(err => console.error('Error fetching attached files:', err))
+      }
+    } else {
+      setAttachedFiles([])
+    }
+  }, [currentConversationId])
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0]
+    if (!selectedFile) return
+
+    setIsUploadingFile(true)
+    const token = localStorage.getItem('sahaj_token')
+
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+    if (currentWorkspace?.id) {
+      formData.append('workspace_id', currentWorkspace.id.toString())
+    }
+    if (conversationIdRef.current) {
+      formData.append('conversation_id', conversationIdRef.current)
+    }
+
+    try {
+      const res = await fetch('/api/files/upload', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      })
+      const data = await res.json()
+      if (data.success && data.file) {
+        setAttachedFiles(prev => [...prev.filter(f => f.id !== data.file.id), data.file])
+      } else {
+        alert(`File upload failed: ${data.error || 'Unknown error'}`)
+      }
+    } catch (err: any) {
+      alert(`Upload error: ${err.message}`)
+    } finally {
+      setIsUploadingFile(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveFile = async (fileId: string) => {
+    setAttachedFiles(prev => prev.filter(f => f.id !== fileId))
+    const token = localStorage.getItem('sahaj_token')
+    if (token) {
+      try {
+        await fetch(`/api/files/${fileId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      } catch (err) {
+        console.error('Error deleting file:', err)
+      }
+    }
+  }
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -80,7 +163,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   }
 
   const handleSend = async (overridePrompt?: string) => {
-    const promptToSend = overridePrompt || input.trim()
+    const isAutoPrompt = !overridePrompt && !input.trim() && attachedFiles.length > 0
+    let promptToSend = overridePrompt || input.trim()
+    if (isAutoPrompt) {
+      promptToSend = "Summarize and analyze the attached document."
+    }
     if (!promptToSend || isGenerating) return
     setInput('')
 
@@ -90,7 +177,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
       conversationIdRef.current = newId
     }
 
-    const newMessages = [...messages, { role: 'user' as const, content: promptToSend }]
+    const currentFiles = [...attachedFiles]
+    const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
     setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
     setIsGenerating(true)
 
@@ -113,6 +201,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
           jailbreak: jailbreak,
           meta: {
             id: token,
+            file_ids: attachedFiles.map(f => f.id),
             content: {
               conversation: newMessages,
               internet_access: webAccess,
@@ -496,7 +585,29 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                     }`}
                   >
                     {msg.role === 'user' ? (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                      <div className="space-y-2">
+                        {msg.files && msg.files.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {msg.files.map(f => (
+                              <a
+                                key={f.id}
+                                href={`/api/files/${f.id}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141a27] border border-gray-700 hover:border-[#FACC15] text-xs text-[#FACC15] hover:underline transition cursor-pointer group"
+                                title="Click to view file"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
+                                <span className="font-medium">{f.original_name}</span>
+                                <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-[#FACC15]" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        {!msg.isAutoPrompt && (
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                        )}
+                      </div>
                     ) : (
                       <div className="relative group text-sm leading-relaxed space-y-2">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
@@ -545,16 +656,69 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
         {/* Input Bar Area */}
         <div className="p-4 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19] to-transparent shrink-0">
           <div className="max-w-3xl mx-auto">
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
+              className="hidden"
+            />
+
+            {/* Attached Files Badges */}
+            {(attachedFiles.length > 0 || isUploadingFile) && (
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {attachedFiles.map(file => (
+                  <div
+                    key={file.id}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1c2436] border border-gray-700 text-xs text-gray-200 shadow-sm"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
+                    <span className="max-w-[150px] truncate font-medium">{file.original_name}</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">✓ Ready</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(file.id)}
+                      className="ml-1 p-0.5 hover:bg-gray-700 rounded-md text-gray-400 hover:text-red-400 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {isUploadingFile && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1c2436] border border-yellow-500/50 text-xs text-[#FACC15] animate-pulse">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Processing file...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="relative flex items-center bg-[#141a27] rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
+              
+              {/* File Attachment Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingFile || isGenerating}
+                className="pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30"
+                title="Attach Document/File for context"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+
               <textarea
-                className="w-full bg-transparent text-white pl-4 pr-14 py-3.5 outline-none resize-none h-14 max-h-36 text-sm placeholder-gray-500"
-                placeholder={`Ask ${currentWorkspace?.name} anything...`}
+                className="w-full bg-transparent text-white pl-2 pr-14 py-3.5 outline-none resize-none h-14 max-h-36 text-sm placeholder-gray-500"
+                placeholder={`Ask ${currentWorkspace?.name} anything (attach PDF, DOCX, CSV, Code...)...`}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
-                    handleSend()
+                    if (input.trim() || attachedFiles.length > 0) {
+                      handleSend()
+                    }
                   }
                 }}
                 disabled={isGenerating}
@@ -563,7 +727,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               <button
                 type="button"
                 onClick={() => handleSend()}
-                disabled={!input.trim() || isGenerating}
+                disabled={(!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile}
                 className="absolute right-2.5 p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20"
               >
                 <Send className="w-4 h-4" />
@@ -571,13 +735,14 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
             </div>
 
             <div className="flex items-center justify-between mt-2 px-2 text-[11px] text-gray-500">
-              <span>Shift + Enter for new line • Enter to send</span>
+              <span>Shift + Enter for new line • Attach files with 📎</span>
               <span className="font-mono text-gray-400">
                 Workspace ID: {currentWorkspace?.id} • Model: {model}
               </span>
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Workspace Creation Modal */}
