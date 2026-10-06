@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  Sparkles,
   Plus,
   Send,
   MessageSquare,
@@ -26,6 +25,7 @@ import {
   Sun,
   Moon,
   ExternalLink,
+  LogIn,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -37,10 +37,11 @@ import { ThinkingBulb } from './ThinkingBulb'
 
 interface UserLayoutProps {
   onSwitchToAdmin?: () => void
+  onRequireAuth?: () => void
 }
 
-export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
-  const { user, logout, isAdmin } = useAuth()
+export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequireAuth }) => {
+  const { user, logout, isAdmin, isAuthenticated } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const {
     workspaces,
@@ -58,7 +59,10 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   } = useWorkspace()
 
   const [input, setInput] = useState('')
-  const [model, setModel] = useState('mistral:latest')
+  // Model hardcoded to Qwen 2.5 Coder by default (easily expandable in the future)
+  const [model, setModel] = useState('qwen2.5-coder:1.5b')
+  void setModel // Keeps setModel referenced for future dynamic selection
+  void Cpu // Keeps Cpu referenced for when model selector JSX is uncommented
   const [jailbreak, setJailbreak] = useState('default')
   const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -95,6 +99,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   }, [currentConversationId])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isAuthenticated) {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      onRequireAuth?.()
+      return
+    }
     const selectedFile = e.target.files?.[0]
     if (!selectedFile) return
 
@@ -163,12 +172,20 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   }
 
   const handleStartNewChat = async () => {
+    if (!isAuthenticated) {
+      onRequireAuth?.()
+      return
+    }
     const newId = await createNewConversation(model, jailbreak)
     conversationIdRef.current = newId
     setMessages([])
   }
 
   const handleSend = async (overridePrompt?: string) => {
+    if (!isAuthenticated) {
+      onRequireAuth?.()
+      return
+    }
     const isAutoPrompt = !overridePrompt && !input.trim() && attachedFiles.length > 0
     let promptToSend = overridePrompt || input.trim()
     if (isAutoPrompt) {
@@ -289,8 +306,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
           <div className="mb-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#FACC15] flex items-center justify-center text-gray-950 font-bold shadow-md shadow-yellow-500/20">
-                  <Sparkles className="w-5 h-5 fill-current" />
+                <div className="shrink-0 flex items-center justify-center">
+                  <ThinkingBulb state={isGenerating ? 'thinking' : 'lit'} size={36} />
                 </div>
                 <div>
                   <h1 className="text-base font-bold text-white tracking-tight leading-none">sahajAI</h1>
@@ -360,6 +377,10 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                     <button
                       onClick={() => {
                         setIsWorkspaceMenuOpen(false)
+                        if (!isAuthenticated) {
+                          onRequireAuth?.()
+                          return
+                        }
                         setIsCreateWsOpen(true)
                       }}
                       className="w-full flex items-center gap-2 p-2 rounded-lg text-xs text-[#FACC15] hover:bg-[#FACC15]/10 font-medium transition cursor-pointer"
@@ -436,41 +457,57 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
             </button>
           )}
 
-          {/* Profile Card */}
-          <div className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800">
-            <div className="flex items-center gap-2.5 truncate">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-xs font-bold text-white uppercase">
-                {user?.username ? user.username[0] : 'U'}
-              </div>
-              <div className="truncate">
-                <p className="text-xs font-semibold text-white truncate">{user?.username || 'User'}</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-gray-800 text-[#FACC15] font-mono font-bold uppercase">
-                    {user?.role || 'user'}
-                  </span>
-                  <span className="text-[10px] text-gray-500 truncate">{user?.email}</span>
+          {/* Profile Card or Sign In Button */}
+          {isAuthenticated ? (
+            <div className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800">
+              <div className="flex items-center gap-2.5 truncate">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-400/40 uppercase shrink-0">
+                  {user?.username ? user.username[0] : 'U'}
+                </div>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-white truncate">{user?.username || 'User'}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={toggleTheme}
+                  title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  className="theme-toggle-btn p-1.5 rounded-lg text-gray-400 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer"
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+
+                <button
+                  onClick={logout}
+                  title="Sign Out"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
               <button
+                type="button"
+                onClick={() => onRequireAuth?.()}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-semibold text-xs flex items-center justify-center gap-2 transition duration-200 shadow-md shadow-yellow-500/20 cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In / Register</span>
+              </button>
+              <button
+                type="button"
                 onClick={toggleTheme}
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                className="theme-toggle-btn p-1.5 rounded-lg text-gray-400 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer"
+                className="theme-toggle-btn p-2.5 rounded-xl border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer shrink-0"
               >
-                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-
-              <button
-                onClick={logout}
-                title="Sign Out"
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
+                {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-amber-500" />}
               </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -493,16 +530,21 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               <span className="text-xs font-bold text-white uppercase tracking-wider">
                 {currentWorkspace?.name}
               </span>
-              <span className="text-xs text-gray-600">/</span>
-              <span className="text-xs text-gray-400 font-mono">
-                {conversations.find(c => c.id === currentConversationId)?.title || 'Active Session'}
-              </span>
+              {conversations.find(c => c.id === currentConversationId)?.title && (
+                <>
+                  <span className="text-xs text-gray-600">/</span>
+                  <span className="text-xs text-gray-400 font-mono truncate max-w-xs">
+                    {conversations.find(c => c.id === currentConversationId)?.title}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
           {/* Model & Config Selectors */}
           <div className="flex items-center gap-2 text-xs">
-            {/* Model Selector */}
+            {/* Model Selector (Commented out - hardcoded to Qwen 2.5 Coder. Uncomment below to restore UI dropdown) */}
+            {/*
             <div className="flex items-center gap-1 bg-[#182030] border border-gray-700/80 rounded-lg px-2.5 py-1 text-gray-200">
               <Cpu className="w-3.5 h-3.5 text-[#FACC15]" />
               <select
@@ -510,10 +552,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                 onChange={e => setModel(e.target.value)}
                 className="bg-transparent text-xs text-white outline-none cursor-pointer"
               >
-                <option value="mistral:latest" className="bg-[#182030]">Mistral Latest</option>
                 <option value="qwen2.5-coder:1.5b" className="bg-[#182030]">Qwen 2.5 Coder</option>
+                <option value="mistral:latest" className="bg-[#182030]">Mistral Latest</option>
               </select>
             </div>
+            */}
 
             {/* Jailbreak Selector */}
             <select
@@ -538,16 +581,6 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               <Globe className="w-3.5 h-3.5" />
               <span>Web Search</span>
             </button>
-
-            {/* Top Bar Theme Toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              className="theme-toggle-btn flex items-center justify-center p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer"
-            >
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-[#ca8a04]" />}
-            </button>
           </div>
         </div>
 
@@ -555,8 +588,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {messages.length === 0 ? (
             <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-10">
-              <div className="w-16 h-16 rounded-3xl bg-[#FACC15]/10 border border-[#FACC15]/30 flex items-center justify-center text-[#FACC15] mb-5 yellow-glow">
-                <Sparkles className="w-8 h-8" />
+              <div className="mb-5 flex items-center justify-center">
+                <ThinkingBulb state="lit" size={64} />
               </div>
               <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
                 Welcome to <span className="text-[#FACC15]">sahajAI</span>
@@ -684,7 +717,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                   </div>
 
                   {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-gray-700 to-gray-600 text-white flex items-center justify-center shrink-0 text-xs font-bold uppercase">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center shrink-0 text-xs font-black shadow-sm border border-yellow-400/40 uppercase">
                       {user?.username ? user.username[0] : 'U'}
                     </div>
                   )}
@@ -742,7 +775,13 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               {/* File Attachment Button */}
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onRequireAuth?.()
+                    return
+                  }
+                  fileInputRef.current?.click()
+                }}
                 disabled={isUploadingFile || isGenerating}
                 className="pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30"
                 title="Attach Document/File for context"
@@ -752,12 +791,16 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
 
               <textarea
                 className="w-full bg-transparent text-white pl-2 pr-14 py-3.5 outline-none resize-none h-14 max-h-36 text-sm placeholder-gray-500"
-                placeholder={`Ask ${currentWorkspace?.name} anything (attach PDF, DOCX, CSV, Code...)...`}
+                placeholder="Start Interacting..."
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
+                    if (!isAuthenticated) {
+                      onRequireAuth?.()
+                      return
+                    }
                     if (input.trim() || attachedFiles.length > 0) {
                       handleSend()
                     }
@@ -768,8 +811,14 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
 
               <button
                 type="button"
-                onClick={() => handleSend()}
-                disabled={(!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onRequireAuth?.()
+                    return
+                  }
+                  handleSend()
+                }}
+                disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
                 className="absolute right-2.5 p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20"
               >
                 <Send className="w-4 h-4" />
