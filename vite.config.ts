@@ -10,6 +10,10 @@ export default defineConfig({
       '/backend-api': {
         target: 'http://127.0.0.1:1338',
         changeOrigin: true,
+      },
+      '/api': {
+        target: 'http://127.0.0.1:1338',
+        changeOrigin: true,
       }
     }
   }
