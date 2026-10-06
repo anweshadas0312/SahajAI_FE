@@ -11,22 +11,25 @@ import { GOOGLE_CLIENT_ID } from './apiConfig'
 const MainContent: React.FC = () => {
   const { isAuthenticated, isAdmin } = useAuth()
   const [viewMode, setViewMode] = useState<'chat' | 'admin'>('chat')
-
-  // If not logged in, show AuthModal
-  if (!isAuthenticated) {
-    return <AuthModal isOpen={true} />
-  }
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   // If user is admin and chooses admin view
-  if (isAdmin && viewMode === 'admin') {
+  if (isAuthenticated && isAdmin && viewMode === 'admin') {
     return <AdminLayout onSwitchToChat={() => setViewMode('chat')} />
   }
 
-  // Otherwise, user workspace view
+  // Otherwise, user workspace view / Landing page
   return (
-    <UserLayout
-      onSwitchToAdmin={isAdmin ? () => setViewMode('admin') : undefined}
-    />
+    <>
+      <UserLayout
+        onSwitchToAdmin={isAuthenticated && isAdmin ? () => setViewMode('admin') : undefined}
+        onRequireAuth={() => setIsAuthModalOpen(true)}
+      />
+      <AuthModal
+        isOpen={!isAuthenticated && isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+    </>
   )
 }
 
