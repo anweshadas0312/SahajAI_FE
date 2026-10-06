@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import type { User } from '../types'
+import { API_ENDPOINTS } from '../apiConfig'
 
 interface AuthContextType {
   user: User | null
@@ -9,6 +10,7 @@ interface AuthContextType {
   isAdmin: boolean
   login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>
   register: (username: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  loginWithGoogle: (googleToken: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   mockLogin: (role: 'admin' | 'user') => void
   dbConnected: boolean
@@ -25,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkDbStatus = async () => {
     try {
-      const res = await fetch('/api/db/status')
+      const res = await fetch(API_ENDPOINTS.AUTH.DB_STATUS)
       if (res.ok) {
         const data = await res.json()
         setDbConnected(!!data.connected)
@@ -39,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchCurrentUser = async (jwtToken: string) => {
     try {
-      const res = await fetch('/api/auth/me', {
+      const res = await fetch(API_ENDPOINTS.AUTH.ME, {
         headers: { Authorization: `Bearer ${jwtToken}` },
       })
       if (res.ok) {
@@ -80,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (identifier: string, password: string) => {
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password }),
@@ -96,13 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return { success: false, error: data.error || 'Login failed' }
     } catch (err) {
-      return { success: false, error: 'Network error or MySQL offline. You can use Demo Login below.' }
+      return { success: false, error: 'Network or server error. You can use Demo Login below.' }
     }
   }
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -118,7 +120,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return { success: false, error: data.error || 'Registration failed' }
     } catch (err) {
-      return { success: false, error: 'Database connection failed. Please ensure MySQL is running.' }
+      return { success: false, error: 'Connection error. Please try again or use Demo Login below.' }
+    }
+  }
+
+  const loginWithGoogle = async (googleToken: string) => {
+    try {
+      const res = await fetch(API_ENDPOINTS.AUTH.GOOGLE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: googleToken }),
+      })
+      const data = await res.json()
+      if (data.success && data.token) {
+        setToken(data.token)
+        setUser(data.user)
+        localStorage.setItem('sahaj_token', data.token)
+        localStorage.setItem('sahaj_cached_user', JSON.stringify(data.user))
+        setDbConnected(true)
+        return { success: true }
+      }
+      return { success: false, error: data.error || 'Google login failed' }
+    } catch (err) {
+      return { success: false, error: 'Google authentication error. Please try again.' }
     }
   }
 
@@ -153,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin: user?.role === 'admin',
         login,
         register,
+        loginWithGoogle,
         logout,
         mockLogin,
         dbConnected,
