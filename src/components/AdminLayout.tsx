@@ -14,9 +14,13 @@ import {
   Sliders,
   Server,
   AlertTriangle,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import type { AdminStats, AdminWorkspaceItem } from '../types'
+import { API_ENDPOINTS } from '../apiConfig'
 
 interface AdminLayoutProps {
   onSwitchToChat: () => void
@@ -34,6 +38,7 @@ interface UserAdminRow {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   const { user, token, logout, dbConnected, checkDbStatus } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [activeTab, setActiveTab] = useState<'users' | 'workspaces' | 'settings'>('users')
   const [stats, setStats] = useState<AdminStats>({
     total_users: 2,
@@ -62,7 +67,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
     if (token && !token.startsWith('demo_token_')) {
       try {
         // Stats
-        const statsRes = await fetch('/api/admin/stats', {
+        const statsRes = await fetch(API_ENDPOINTS.ADMIN.STATS, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (statsRes.ok) {
@@ -71,7 +76,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         }
 
         // Users
-        const usersRes = await fetch('/api/admin/users', {
+        const usersRes = await fetch(API_ENDPOINTS.ADMIN.USERS, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (usersRes.ok) {
@@ -80,7 +85,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         }
 
         // Workspaces
-        const wsRes = await fetch('/api/admin/workspaces', {
+        const wsRes = await fetch(API_ENDPOINTS.ADMIN.WORKSPACES, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (wsRes.ok) {
@@ -107,7 +112,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
 
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch(`/api/admin/users/${userId}/role`, {
+        const res = await fetch(API_ENDPOINTS.ADMIN.USER_ROLE(userId), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ role: newRole }),
@@ -134,7 +139,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
 
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch(`/api/admin/users/${userId}`, {
+        const res = await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(userId), {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -169,7 +174,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-white tracking-tight">SahajAI Admin</h1>
+              <h1 className="text-base font-bold text-white tracking-tight">sahajAI Admin</h1>
               <span className="px-2 py-0.5 rounded-full bg-[#FACC15]/15 border border-[#FACC15]/30 text-[#FACC15] text-[10px] font-mono font-bold uppercase">
                 Control Center
               </span>
@@ -187,6 +192,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           >
             <ArrowLeft className="w-4 h-4 text-[#FACC15]" />
             <span>AI Chat Studio</span>
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle-btn p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-[#FACC15] transition cursor-pointer"
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-blue-500" />}
           </button>
 
           {/* Refresh Data */}

@@ -19,17 +19,24 @@ import {
   Code,
   Terminal,
   Compass,
+  Sun,
+  Moon,
+  ExternalLink,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
+import { useTheme } from '../context/ThemeContext'
 import { WorkspaceModal } from './WorkspaceModal'
+import { API_ENDPOINTS } from '../apiConfig'
+import { ThinkingBulb } from './ThinkingBulb'
 
 interface UserLayoutProps {
   onSwitchToAdmin?: () => void
 }
 
 export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
-  const { user, logout, isAdmin, dbConnected } = useAuth()
+  const { user, logout, isAdmin } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const {
     workspaces,
     currentWorkspace,
@@ -100,9 +107,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
       updateConversationTitle(conversationIdRef.current, shortTitle)
     }
 
+    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
+
     try {
       const token = Math.random().toString(36).substring(2)
-      const response = await fetch('/backend-api/v2/conversation', {
+      const response = await fetch(API_ENDPOINTS.CONVERSATION.STREAM, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
         body: JSON.stringify({
@@ -196,18 +205,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                   <Sparkles className="w-5 h-5 fill-current" />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold text-white tracking-tight leading-none">SahajAI</h1>
+                  <h1 className="text-base font-bold text-white tracking-tight leading-none">sahajAI</h1>
                   <span className="text-[10px] uppercase tracking-wider font-semibold text-[#FACC15]">Studio</span>
                 </div>
-              </div>
-
-              {/* DB Status Badge */}
-              <div
-                title={dbConnected ? 'MySQL Connected' : 'MySQL Standby'}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-850 border border-gray-700/60 text-[10px] text-gray-400"
-              >
-                <span className={`w-2 h-2 rounded-full ${dbConnected ? 'bg-emerald-400' : 'bg-amber-400'} animate-pulse`} />
-                <span>MySQL</span>
               </div>
             </div>
 
@@ -367,13 +367,23 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               </div>
             </div>
 
-            <button
-              onClick={logout}
-              title="Sign Out"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleTheme}
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                className="theme-toggle-btn p-1.5 rounded-lg text-gray-400 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer"
+              >
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+
+              <button
+                onClick={logout}
+                title="Sign Out"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -384,18 +394,24 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
       <div className="flex-1 flex flex-col relative bg-[#0b0f19] overflow-hidden">
         {/* Top Control Bar */}
         <div className="h-14 px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
+          <div className="flex items-center gap-3">
+            <ThinkingBulb 
+              state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'} 
+              size={32} 
             />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
-              {currentWorkspace?.name}
-            </span>
-            <span className="text-xs text-gray-600">/</span>
-            <span className="text-xs text-gray-400 font-mono">
-              {conversations.find(c => c.id === currentConversationId)?.title || 'Active Session'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
+              />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                {currentWorkspace?.name}
+              </span>
+              <span className="text-xs text-gray-600">/</span>
+              <span className="text-xs text-gray-400 font-mono">
+                {conversations.find(c => c.id === currentConversationId)?.title || 'Active Session'}
+              </span>
+            </div>
           </div>
 
           {/* Model & Config Selectors */}
@@ -437,6 +453,16 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               <Globe className="w-3.5 h-3.5" />
               <span>Web Search</span>
             </button>
+
+            {/* Top Bar Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="theme-toggle-btn flex items-center justify-center p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer"
+            >
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-[#ca8a04]" />}
+            </button>
           </div>
         </div>
 
@@ -448,7 +474,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                 <Sparkles className="w-8 h-8" />
               </div>
               <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-                Welcome to <span className="text-[#FACC15]">SahajAI</span>
+                Welcome to <span className="text-[#FACC15]">sahajAI</span>
               </h2>
               <p className="text-gray-400 text-sm max-w-md text-center mb-8">
                 Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
@@ -483,8 +509,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                   className={`flex gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.role !== 'user' && (
-                    <div className="w-8 h-8 rounded-xl bg-[#FACC15] text-gray-950 flex items-center justify-center shrink-0 font-bold shadow-md shadow-yellow-500/20">
-                      <Sparkles className="w-4 h-4" />
+                    <div className="shrink-0 pt-0.5">
+                      <ThinkingBulb 
+                        state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'} 
+                        size={42} 
+                      />
                     </div>
                   )}
 
@@ -499,7 +528,31 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                       <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
                     ) : (
                       <div className="relative group text-sm leading-relaxed space-y-2">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        {msg.content ? (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node, href, children, ...props }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                  {...props}
+                                >
+                                  <span>{children}</span>
+                                  <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                </a>
+                              ),
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
+                            <span></span><span></span><span></span>
+                          </span>
+                        )}
                         {msg.content && (
                           <div className="flex justify-end pt-2">
                             <button
@@ -531,12 +584,6 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
                   )}
                 </div>
               ))}
-              {isGenerating && (
-                <div className="flex items-center gap-2 text-xs text-[#FACC15] animate-pulse">
-                  <Sparkles className="w-4 h-4 animate-spin" />
-                  <span>SahajAI is generating response...</span>
-                </div>
-              )}
               <div ref={bottomRef} />
             </div>
           )}
@@ -568,13 +615,6 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
               >
                 <Send className="w-4 h-4" />
               </button>
-            </div>
-
-            <div className="flex items-center justify-between mt-2 px-2 text-[11px] text-gray-500">
-              <span>Shift + Enter for new line • Enter to send</span>
-              <span className="font-mono text-gray-400">
-                Workspace ID: {currentWorkspace?.id} • Model: {model}
-              </span>
             </div>
           </div>
         </div>

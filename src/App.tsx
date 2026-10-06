@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
 import { UserLayout } from './components/UserLayout'
 import { AdminLayout } from './components/AdminLayout'
 import { AuthModal } from './components/AuthModal'
+import { GOOGLE_CLIENT_ID } from './apiConfig'
 
 const MainContent: React.FC = () => {
   const { isAuthenticated, isAdmin } = useAuth()
@@ -29,11 +32,15 @@ const MainContent: React.FC = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <WorkspaceProvider>
-        <MainContent />
-      </WorkspaceProvider>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <ThemeProvider>
+        <AuthProvider>
+          <WorkspaceProvider>
+            <MainContent />
+          </WorkspaceProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   )
 }
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import type { Workspace, Conversation, ChatMessage } from '../types'
 import { useAuth } from './AuthContext'
+import { API_ENDPOINTS } from '../apiConfig'
 
 interface WorkspaceContextType {
   workspaces: Workspace[]
@@ -55,7 +56,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setIsLoadingWorkspaces(true)
     try {
-      const res = await fetch('/api/workspaces', {
+      const res = await fetch(API_ENDPOINTS.WORKSPACES.BASE, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
@@ -104,7 +105,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsLoadingConversations(true)
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch(`/api/workspaces/${currentWorkspace.id}/conversations`, {
+        const res = await fetch(API_ENDPOINTS.WORKSPACES.CONVERSATIONS(currentWorkspace.id), {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
@@ -144,12 +145,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch(`/api/conversations/${currentConversationId}`, {
+        const res = await fetch(API_ENDPOINTS.CONVERSATIONS.BY_ID(currentConversationId), {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
           const data = await res.json()
-          if (data.success && data.messages) {
+          if (data.success && Array.isArray(data.messages) && data.messages.length > 0) {
             setMessages(data.messages)
             return
           }
@@ -164,12 +165,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const stored = localStorage.getItem(localKey)
     if (stored) {
       try {
-        setMessages(JSON.parse(stored))
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed)
+          return
+        }
       } catch {
-        setMessages([])
+        // ignore
       }
-    } else {
-      setMessages([])
     }
   }
 
@@ -186,7 +189,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [currentWorkspace?.id])
 
   useEffect(() => {
-    fetchMessages()
+    if (currentConversationId) {
+      fetchMessages()
+    }
   }, [currentConversationId])
 
   // Save messages to local cache as backup
@@ -200,7 +205,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!user) return false
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch('/api/workspaces', {
+        const res = await fetch(API_ENDPOINTS.WORKSPACES.BASE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ name, description, icon_color }),
@@ -240,7 +245,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!user) return false
     try {
       if (token && !token.startsWith('demo_token_')) {
-        await fetch(`/api/workspaces/${id}`, {
+        await fetch(API_ENDPOINTS.WORKSPACES.BY_ID(id), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ name, description, icon_color }),
@@ -263,7 +268,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!user) return false
     try {
       if (token && !token.startsWith('demo_token_')) {
-        await fetch(`/api/workspaces/${id}`, {
+        await fetch(API_ENDPOINTS.WORKSPACES.BY_ID(id), {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -296,7 +301,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     try {
       if (token && !token.startsWith('demo_token_')) {
-        await fetch(`/api/workspaces/${newConv.workspace_id}/conversations`, {
+        await fetch(API_ENDPOINTS.WORKSPACES.CONVERSATIONS(newConv.workspace_id), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(newConv),
@@ -309,7 +314,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const updated = [newConv, ...conversations]
     setConversations(updated)
     setCurrentConversationId(newId)
-    setMessages([])
     if (user && currentWorkspace) {
       localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
     }
@@ -319,7 +323,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const deleteConversation = async (id: string) => {
     try {
       if (token && !token.startsWith('demo_token_')) {
-        await fetch(`/api/conversations/${id}`, {
+        await fetch(API_ENDPOINTS.CONVERSATIONS.BY_ID(id), {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -343,7 +347,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const updateConversationTitle = async (id: string, title: string) => {
     try {
       if (token && !token.startsWith('demo_token_')) {
-        await fetch(`/api/conversations/${id}`, {
+        await fetch(API_ENDPOINTS.CONVERSATIONS.BY_ID(id), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ title }),
