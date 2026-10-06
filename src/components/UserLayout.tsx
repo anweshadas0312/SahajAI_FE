@@ -778,9 +778,6 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
 
             <div className="flex items-center justify-between mt-2 px-2 text-[11px] text-gray-500">
               <span>Shift + Enter for new line • Attach files with 📎</span>
-              <span className="font-mono text-gray-400">
-                Workspace ID: {currentWorkspace?.id} • Model: {model}
-              </span>
             </div>
           </div>
         </div>
