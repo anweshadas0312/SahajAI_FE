@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Trash2,
   ChevronDown,
+  ChevronRight,
   Globe,
   Shield,
   LogOut,
@@ -67,6 +68,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   void setModel // Keeps setModel referenced for future dynamic selection
   void Cpu // Keeps Cpu referenced for when model selector JSX is uncommented
   const [jailbreak, setJailbreak] = useState('default')
+  const [isJailbreakMenuOpen, setIsJailbreakMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [isHelpSubmenuOpen, setIsHelpSubmenuOpen] = useState(false)
   const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
@@ -198,6 +202,12 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     if (!promptToSend || isGenerating) return
     setInput('')
 
+    const currentFiles = [...attachedFiles]
+    setAttachedFiles([])
+    const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
+    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
+    setIsGenerating(true)
+
     // Ensure we have a conversation created
     const shortTitle = promptToSend.slice(0, 32) + (promptToSend.length > 32 ? '...' : '')
     let activeId = currentConversationId || conversationIdRef.current
@@ -207,12 +217,6 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     } else if (messages.length === 0 && activeId) {
       updateConversationTitle(activeId, shortTitle)
     }
-
-    const currentFiles = [...attachedFiles]
-    setAttachedFiles([])
-    const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
-    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
-    setIsGenerating(true)
 
     try {
       const streamToken = Math.random().toString(36).substring(2)
@@ -243,6 +247,18 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         }),
       })
 
+      if (!response.ok) {
+        if (response.status === 504) {
+          throw new Error('GATEWAY_TIMEOUT_504')
+        } else if (response.status === 502) {
+          throw new Error('BAD_GATEWAY_502')
+        } else if (response.status === 401 || response.status === 403) {
+          throw new Error('AUTH_ERROR')
+        } else {
+          throw new Error(`HTTP_ERROR_${response.status}`)
+        }
+      }
+
       if (!response.body) throw new Error('No response body stream')
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
@@ -252,11 +268,30 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         const { value, done } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
+
+        // Safety check: if backend/proxy returned an HTML error page instead of stream
+        if ((assistantContent + chunk).trim().toLowerCase().startsWith('<html') || 
+            (assistantContent + chunk).trim().toLowerCase().startsWith('<!doctype')) {
+          throw new Error('GATEWAY_TIMEOUT_504')
+        }
+
         assistantContent += chunk
         setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat generation error:', error)
+      let customNotice = '⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.'
+      
+      if (error?.message === 'GATEWAY_TIMEOUT_504') {
+        customNotice = '⚠️ **Gateway Timeout (504)**: The server took too long to process this request (especially with document/CSV analysis). The AI model or upstream Nginx server timed out. Please try again or check Nginx `proxy_read_timeout` on the server.'
+      } else if (error?.message === 'BAD_GATEWAY_502') {
+        customNotice = '⚠️ **Bad Gateway (502)**: The AI backend service is currently offline or unreachable.'
+      } else if (error?.message === 'AUTH_ERROR') {
+        customNotice = '⚠️ **Authentication Required**: Your session has expired. Please log in again.'
+      } else if (error?.message?.startsWith('HTTP_ERROR_')) {
+        customNotice = `⚠️ **Server Error (${error.message.replace('HTTP_ERROR_', '')})**: The server encountered an issue processing your request.`
+      }
+
       setMessages(prev => {
         const last = prev[prev.length - 1]
         return [
@@ -264,8 +299,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           {
             ...last,
             content:
-              (last ? last.content : '') +
-              '\n\n> ⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.',
+              (last && !last.content.trim().toLowerCase().startsWith('<html') ? last.content : '') +
+              `\n\n> ${customNotice}`,
           },
         ]
       })
@@ -495,27 +530,94 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
           {/* Profile Card or Sign In Button */}
           {isAuthenticated ? (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800">
-              <div className="flex items-center gap-2.5 truncate">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-400/40 uppercase shrink-0">
-                  {user?.username ? user.username[0] : 'U'}
+            <div className="relative">
+              {isProfileMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => { setIsProfileMenuOpen(false); setIsHelpSubmenuOpen(false); }} />
+                  <div className={`absolute left-0 right-0 bottom-full mb-2 border rounded-xl shadow-2xl z-50 p-1 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsHelpSubmenuOpen(!isHelpSubmenuOpen);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition cursor-pointer ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                      >
+                        <span>Help</span>
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isHelpSubmenuOpen ? 'rotate-90' : ''}`} />
+                      </button>
+
+                      {isHelpSubmenuOpen && (
+                        <div className={`absolute left-full bottom-0 ml-1 w-48 border rounded-xl shadow-xl overflow-hidden p-1 z-50 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                          <a
+                            href="/privacy-policy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              setIsHelpSubmenuOpen(false)
+                              setIsProfileMenuOpen(false)
+                            }}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                          >
+                            Privacy Policy
+                          </a>
+                          <a
+                            href="/disclaimer"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              setIsHelpSubmenuOpen(false)
+                              setIsProfileMenuOpen(false)
+                            }}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                          >
+                            Disclaimer
+                          </a>
+                          <a
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              setIsHelpSubmenuOpen(false)
+                              setIsProfileMenuOpen(false)
+                            }}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                          >
+                            Terms and Conditions
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div
+                className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-gray-700 transition cursor-pointer"
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-400/40 uppercase shrink-0">
+                    {user?.username ? user.username[0] : 'U'}
+                  </div>
+                  <div className="truncate">
+                    <p className="text-xs font-semibold text-white truncate">{user?.username || 'User'}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+                  </div>
                 </div>
-                <div className="truncate">
-                  <p className="text-xs font-semibold text-white truncate">{user?.username || 'User'}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      logout()
+                    }}
+                    title="Sign Out"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-1">
-
-
-                <button
-                  onClick={logout}
-                  title="Sign Out"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
               </div>
             </div>
           ) : (
@@ -554,7 +656,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           </div>
 
           {/* Centered Workspace Info */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-3">
             <ThinkingBulb
               state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
               size={28}
@@ -593,28 +695,52 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
-              {/* Jailbreak Selector */}
-              <select
-                value={jailbreak}
-                onMouseDown={e => {
-                  if (!isAuthenticated && onRequireAuth) {
-                    e.preventDefault()
-                    onRequireAuth()
-                  }
-                }}
-                onChange={e => {
-                  if (!isAuthenticated && onRequireAuth) {
-                    onRequireAuth()
-                    return
-                  }
-                  setJailbreak(e.target.value)
-                }}
-                className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
-              >
-                <option value="default" className="bg-[#182030]">Guided Mode</option>
-                <option value="gpt-dan-11.0" className="bg-[#182030]">Ask Anything</option>
-                <option value="gpt-evil" className="bg-[#182030]">Unrestricted Ask</option>
-              </select>
+              {/* Custom Jailbreak Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated && onRequireAuth) {
+                      onRequireAuth()
+                      return
+                    }
+                    setIsJailbreakMenuOpen(!isJailbreakMenuOpen)
+                  }}
+                  className="bg-[#182030] border border-gray-700/80 rounded-lg pl-2.5 pr-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer flex items-center gap-1.5 transition hover:border-gray-500 hover:text-white"
+                >
+                  <span className="truncate max-w-[100px] sm:max-w-[140px]">
+                    {jailbreak === 'default' ? 'Guided Mode' : jailbreak === 'gpt-dan-11.0' ? 'Ask Anything' : 'Unrestricted Ask'}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                </button>
+
+                {isJailbreakMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsJailbreakMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1.5 w-40 sm:w-44 bg-[#111827] border border-gray-800 rounded-xl shadow-2xl shadow-black overflow-hidden z-50 p-1 origin-top-right">
+                      {[
+                        { value: 'default', label: 'Guided Mode' },
+                        { value: 'gpt-dan-11.0', label: 'Ask Anything' },
+                        { value: 'gpt-evil', label: 'Unrestricted Ask' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            setJailbreak(opt.value)
+                            setIsJailbreakMenuOpen(false)
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-[11px] sm:text-xs transition cursor-pointer ${jailbreak === opt.value
+                            ? 'bg-[#FACC15]/15 text-[#FACC15] font-medium'
+                            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                            }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Web Access Toggle */}
               <button
@@ -641,7 +767,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
         {/* Chat Message List */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-          {messages.length === 0 ? (
+          {messages.length === 0 && !isGenerating ? (
             <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
               <div className="mb-4 sm:mb-5 flex items-center justify-center">
                 <ThinkingBulb state="lit" size={54} />
@@ -878,60 +1004,60 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               </div>
             )}
 
-          <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
+            <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
 
-            {/* File Attachment Button */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onRequireAuth?.()
-                  return
-                }
-                fileInputRef.current?.click()
-              }}
-              disabled={isUploadingFile || isGenerating}
-              className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
-              title="Attach Document/File for context"
-            >
-              <Paperclip className="w-4 h-4" />
-            </button>
-
-            <textarea
-              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-3.5 sm:py-4 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
-              placeholder="Start Interacting..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
+              {/* File Attachment Button */}
+              <button
+                type="button"
+                onClick={() => {
                   if (!isAuthenticated) {
                     onRequireAuth?.()
                     return
                   }
-                  if (input.trim() || attachedFiles.length > 0) {
-                    handleSend()
-                  }
-                }
-              }}
-              disabled={isGenerating}
-            />
+                  fileInputRef.current?.click()
+                }}
+                disabled={isUploadingFile || isGenerating}
+                className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
+                title="Attach Document/File for context"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onRequireAuth?.()
-                  return
-                }
-                handleSend()
-              }}
-              disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
-              className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
-            >
-              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-          </div>
+              <textarea
+                className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-[16px] sm:py-[18px] outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500 leading-tight"
+                placeholder="Start Interacting..."
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (!isAuthenticated) {
+                      onRequireAuth?.()
+                      return
+                    }
+                    if (input.trim() || attachedFiles.length > 0) {
+                      handleSend()
+                    }
+                  }
+                }}
+                disabled={isGenerating}
+              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onRequireAuth?.()
+                    return
+                  }
+                  handleSend()
+                }}
+                disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
+                className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
+              >
+                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
 
             <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
               <span className="hidden sm:inline-flex items-center gap-1">

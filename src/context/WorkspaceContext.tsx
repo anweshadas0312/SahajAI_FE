@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import type { Workspace, Conversation, ChatMessage } from '../types'
 import { useAuth } from './AuthContext'
 import { API_ENDPOINTS } from '../apiConfig'
@@ -45,6 +45,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState<boolean>(false)
   const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(false)
+  const isNewConvRef = useRef<string | null>(null)
 
   // Fetch workspaces when user/token changes
   const fetchWorkspaces = async () => {
@@ -174,7 +175,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // ignore
       }
     }
-    setMessages([])
+    // Only clear messages if we do not already have active messages in memory
+    setMessages(prev => (prev.length > 0 ? prev : []))
   }
 
   useEffect(() => {
@@ -191,6 +193,11 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   useEffect(() => {
     if (currentConversationId) {
+      if (isNewConvRef.current === currentConversationId) {
+        // Newly created conversation for active message; do not overwrite in-memory chat
+        isNewConvRef.current = null
+        return
+      }
       fetchMessages()
     }
   }, [currentConversationId])
@@ -332,6 +339,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       return updated
     })
+    isNewConvRef.current = newId
     setCurrentConversationId(newId)
     return newId
   }
