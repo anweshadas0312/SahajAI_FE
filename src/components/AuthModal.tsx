@@ -233,7 +233,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               shape="pill"
               size="large"
               text={isRegister ? 'signup_with' : 'signin_with'}
-              width="360"
+              width="310"
             />
           </div>
         </div>

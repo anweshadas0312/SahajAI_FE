@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Trash2,
   ChevronDown,
+  ChevronRight,
   Globe,
   Shield,
   LogOut,
@@ -66,6 +67,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   void setModel // Keeps setModel referenced for future dynamic selection
   void Cpu // Keeps Cpu referenced for when model selector JSX is uncommented
   const [jailbreak, setJailbreak] = useState('default')
+  const [isJailbreakMenuOpen, setIsJailbreakMenuOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+  const [isHelpSubmenuOpen, setIsHelpSubmenuOpen] = useState(false)
   const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
@@ -499,27 +503,60 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
           {/* Profile Card or Sign In Button */}
           {isAuthenticated ? (
-            <div className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800">
-              <div className="flex items-center gap-2.5 truncate">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-400/40 uppercase shrink-0">
-                  {user?.username ? user.username[0] : 'U'}
+            <div className="relative">
+              {isProfileMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => { setIsProfileMenuOpen(false); setIsHelpSubmenuOpen(false); }} />
+                  <div className={`absolute left-0 right-0 bottom-full mb-2 border rounded-xl shadow-2xl z-50 p-1 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsHelpSubmenuOpen(!isHelpSubmenuOpen);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition cursor-pointer ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                      >
+                        <span>Help</span>
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isHelpSubmenuOpen ? 'rotate-90' : ''}`} />
+                      </button>
+                      
+                      {isHelpSubmenuOpen && (
+                        <div className={`absolute left-full bottom-0 ml-1 w-48 border rounded-xl shadow-xl overflow-hidden p-1 z-50 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                          <a onClick={() => { setIsHelpSubmenuOpen(false); setIsProfileMenuOpen(false); }} href="https://sahaj.ai/privacy-policy" target="_blank" rel="noreferrer" className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}>Privacy Policy</a>
+                          <a onClick={() => { setIsHelpSubmenuOpen(false); setIsProfileMenuOpen(false); }} href="https://sahaj.ai/terms" target="_blank" rel="noreferrer" className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}>Terms and Conditions</a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <div 
+                className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-gray-700 transition cursor-pointer"
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-400/40 uppercase shrink-0">
+                    {user?.username ? user.username[0] : 'U'}
+                  </div>
+                  <div className="truncate">
+                    <p className="text-xs font-semibold text-white truncate">{user?.username || 'User'}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+                  </div>
                 </div>
-                <div className="truncate">
-                  <p className="text-xs font-semibold text-white truncate">{user?.username || 'User'}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{user?.email}</p>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      logout()
+                    }}
+                    title="Sign Out"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-1">
-
-
-                <button
-                  onClick={logout}
-                  title="Sign Out"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
               </div>
             </div>
           ) : (
@@ -558,7 +595,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           </div>
 
           {/* Centered Workspace Info */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-3">
             <ThinkingBulb
               state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
               size={28}
@@ -597,28 +634,52 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
-              {/* Jailbreak Selector */}
-              <select
-                value={jailbreak}
-                onMouseDown={e => {
-                  if (!isAuthenticated && onRequireAuth) {
-                    e.preventDefault()
-                    onRequireAuth()
-                  }
-                }}
-                onChange={e => {
-                  if (!isAuthenticated && onRequireAuth) {
-                    onRequireAuth()
-                    return
-                  }
-                  setJailbreak(e.target.value)
-                }}
-                className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
-              >
-                <option value="default" className="bg-[#182030]">Guided Mode</option>
-                <option value="gpt-dan-11.0" className="bg-[#182030]">Ask Anything</option>
-                <option value="gpt-evil" className="bg-[#182030]">Unrestricted Ask</option>
-              </select>
+              {/* Custom Jailbreak Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated && onRequireAuth) {
+                      onRequireAuth()
+                      return
+                    }
+                    setIsJailbreakMenuOpen(!isJailbreakMenuOpen)
+                  }}
+                  className="bg-[#182030] border border-gray-700/80 rounded-lg pl-2.5 pr-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer flex items-center gap-1.5 transition hover:border-gray-500 hover:text-white"
+                >
+                  <span className="truncate max-w-[100px] sm:max-w-[140px]">
+                    {jailbreak === 'default' ? 'Guided Mode' : jailbreak === 'gpt-dan-11.0' ? 'Ask Anything' : 'Unrestricted Ask'}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                </button>
+
+                {isJailbreakMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsJailbreakMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1.5 w-40 sm:w-44 bg-[#111827] border border-gray-800 rounded-xl shadow-2xl shadow-black overflow-hidden z-50 p-1 origin-top-right">
+                      {[
+                        { value: 'default', label: 'Guided Mode' },
+                        { value: 'gpt-dan-11.0', label: 'Ask Anything' },
+                        { value: 'gpt-evil', label: 'Unrestricted Ask' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            setJailbreak(opt.value)
+                            setIsJailbreakMenuOpen(false)
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-[11px] sm:text-xs transition cursor-pointer ${jailbreak === opt.value
+                            ? 'bg-[#FACC15]/15 text-[#FACC15] font-medium'
+                            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                            }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Web Access Toggle */}
               <button
@@ -867,7 +928,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             </button>
 
             <textarea
-              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 pt-[14px] pb-2 sm:pt-[18px] sm:pb-3 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500 leading-tight"
+              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-[16px] sm:py-[18px] outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500 leading-tight"
               placeholder="Start Interacting..."
               value={input}
               onChange={e => setInput(e.target.value)}
