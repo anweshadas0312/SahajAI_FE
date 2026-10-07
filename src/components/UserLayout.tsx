@@ -545,374 +545,358 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       {/* ========================================================= */}
       <div className="flex-1 flex flex-col relative bg-[#0b0f19] overflow-hidden min-w-0">
         {/* Top Control Bar */}
-        <div className="h-14 px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 relative">
-          {/* Empty left spacer to keep right controls aligned */}
-          <div className="flex-1"></div>
+        <div className="h-14 px-3 sm:px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 relative">
+
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            {/* Hamburger Button for Mobile */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="md:hidden p-2 -ml-1 text-gray-300 hover:text-[#FACC15] hover:bg-gray-800/70 rounded-xl transition cursor-pointer shrink-0"
+              aria-label="Open sidebar"
+              title="Open Navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Centered Workspace Info */}
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
-            <div className="h-14 px-3 sm:px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 gap-2">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                {/* Hamburger Button for Mobile */}
-                <button
-                  type="button"
-                  onClick={() => setIsMobileSidebarOpen(true)}
-                  className="md:hidden p-2 -ml-1 text-gray-300 hover:text-[#FACC15] hover:bg-gray-800/70 rounded-xl transition cursor-pointer shrink-0"
-                  aria-label="Open sidebar"
-                  title="Open Navigation"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-
-                <ThinkingBulb
-                  state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
-                  size={28}
-                />
-                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
-                  />
-                  <span className="text-xs font-bold text-white lowercase tracking-wider">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider truncate max-w-[100px] sm:max-w-[160px]">
-                      {currentWorkspace?.name}
+            <ThinkingBulb
+              state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
+              size={28}
+            />
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
+              />
+              <span className="text-xs font-bold text-white lowercase tracking-wider flex items-center">
+                <span className="text-xs font-bold text-white uppercase tracking-wider truncate max-w-[100px] sm:max-w-[160px]">
+                  {currentWorkspace?.name}
+                </span>
+                {conversations.find(c => c.id === currentConversationId)?.title && (
+                  <>
+                    <span className="text-xs text-gray-600 hidden sm:inline mx-1">/</span>
+                    <span className="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-xs hidden sm:inline">
+                      {conversations.find(c => c.id === currentConversationId)?.title}
                     </span>
-                    {conversations.find(c => c.id === currentConversationId)?.title && (
-                      <>
-                        <span className="text-xs text-gray-600 hidden sm:inline">/</span>
-                        <span className="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-xs hidden sm:inline">
-                          {conversations.find(c => c.id === currentConversationId)?.title}
-                        </span>
-                      </>
-                    )}
-                </div>
-              </div>
-
-              {/* Model & Config Selectors */}
-              <div className="flex items-center gap-2 text-xs">
-                {/* Model Selector (Commented out - hardcoded to Qwen 2.5 Coder. Uncomment below to restore UI dropdown) */}
-                {/*
-            <div className="flex items-center gap-1 bg-[#182030] border border-gray-700/80 rounded-lg px-2.5 py-1 text-gray-200">
-              <Cpu className="w-3.5 h-3.5 text-[#FACC15]" />
-              <select
-                value={model}
-                onChange={e => setModel(e.target.value)}
-                className="bg-transparent text-xs text-white outline-none cursor-pointer"
-              >
-                <option value="qwen2.5-coder:1.5b" className="bg-[#182030]">Qwen 2.5 Coder</option>
-                <option value="mistral:latest" className="bg-[#182030]">Mistral Latest</option>
-              </select>
-            </div>
-            */}
-
-                {/* Theme Toggle */}
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                  className="theme-toggle-btn p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer flex items-center justify-center shrink-0"
-                >
-                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
-                </button>
-
-                <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
-                  {/* Jailbreak Selector */}
-                  <select
-                    value={jailbreak}
-                    onChange={e => setJailbreak(e.target.value)}
-                    className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
-                  >
-                    <option value="default" className="bg-[#182030]">Standard</option>
-                    <option value="gpt-dan-11.0" className="bg-[#182030]">DAN Mode</option>
-                    <option value="gpt-evil" className="bg-[#182030]">EvilBOT</option>
-                  </select>
-
-                  {/* Web Access Toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setWebAccess(!webAccess)}
-                    className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition cursor-pointer ${webAccess
-                      ? 'bg-[#FACC15]/15 border-[#FACC15] text-[#FACC15]'
-                      : 'bg-[#182030] border-gray-700/80 text-gray-400 hover:text-gray-200'
-                      }`}
-                    title="Toggle Web Search"
-                  >
-                    <Globe className="w-3.5 h-3.5 shrink-0" />
-                    <span className="hidden sm:inline">Web Search</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat Message List */}
-              <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-                {messages.length === 0 ? (
-                  <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
-                    <div className="mb-4 sm:mb-5 flex items-center justify-center">
-                      <ThinkingBulb state="lit" size={54} />
-                    </div>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-                      Welcome to <span className="text-[#FACC15]">sahajAI</span>
-                    </h2>
-                    <p className="text-gray-400 text-xs sm:text-sm max-w-md text-center mb-6 sm:mb-8 px-2">
-                      Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
-                      All conversations and outputs are saved securely.
-                    </p>
-
-                    {/* Starter Prompts Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full">
-                      {starterPrompts.map((card, i) => {
-                        const Icon = card.icon
-                        return (
-                          <div
-                            key={i}
-                            style={{ '--card-index': i } as React.CSSProperties}
-                            onClick={() => handleSend(card.prompt)}
-                            className="starter-card-anim group relative p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#141a27] border border-gray-800/90 hover:border-[#FACC15]/60 hover:bg-[#182030] cursor-pointer text-left select-none"
-                          >
-                            <div className="starter-card-shimmer" />
-
-                            <div className="flex items-start justify-between mb-2 sm:mb-2.5 relative z-10">
-                              <div className="flex items-center gap-2 sm:gap-2.5">
-                                <div className="starter-icon-wrap p-1.5 sm:p-2 rounded-xl bg-[#FACC15]/10 text-[#FACC15] group-hover:bg-[#FACC15] group-hover:text-[#0b0f19] group-hover:scale-110 group-hover:rotate-[-4deg] transition-all duration-300 shadow-sm">
-                                  <Icon className="w-4 h-4 transition-colors" />
-                                </div>
-                                <span className="starter-tag text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-gray-800/80 text-gray-300 border border-gray-700/60 group-hover:border-[#FACC15]/40 group-hover:text-[#FACC15] transition-colors">
-                                  {card.category}
-                                </span>
-                              </div>
-                              <div className="flex items-center text-gray-500 group-hover:text-[#FACC15] group-hover:translate-x-1 opacity-60 group-hover:opacity-100 transition-all duration-200">
-                                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                              </div>
-                            </div>
-
-                            <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#FACC15] transition-colors mb-1 relative z-10">
-                              {card.title}
-                            </h4>
-                            <p className="text-[11px] sm:text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors relative z-10">
-                              {card.desc}
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
-                    {messages.map((msg, idx) => (
-                      <div
-                        key={idx}
-                        className={`flex gap-2 sm:gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        {msg.role !== 'user' && (
-                          <div className="shrink-0 pt-0.5">
-                            <ThinkingBulb
-                              state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
-                              size={32}
-                            />
-                          </div>
-                        )}
-
-                        <div
-                          className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
-                            ? 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
-                            : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
-                            }`}
-                        >
-                          {msg.role === 'user' ? (
-                            <div className="space-y-2">
-                              {msg.files && msg.files.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mb-1.5">
-                                  {msg.files.map(f => (
-                                    <a
-                                      key={f.id}
-                                      href={`/api/files/${f.id}/view`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141a27] border border-gray-700 hover:border-[#FACC15] text-xs text-[#FACC15] hover:underline transition cursor-pointer group"
-                                      title="Click to view file"
-                                    >
-                                      <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
-                                      <span className="font-medium">{f.original_name}</span>
-                                      <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-[#FACC15]" />
-                                    </a>
-                                  ))}
-                                </div>
-                              )}
-                              {!msg.isAutoPrompt && (
-                                <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{msg.content}</p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
-                              {msg.content ? (
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={{
-                                    a: ({ node, href, children, ...props }) => (
-                                      <a
-                                        href={href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
-                                        {...props}
-                                      >
-                                        <span>{children}</span>
-                                        <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
-                                      </a>
-                                    ),
-                                  }}
-                                >
-                                  {msg.content}
-                                </ReactMarkdown>
-                              ) : (
-                                <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
-                                  <span></span><span></span><span></span>
-                                </span>
-                              )}
-                              {msg.content && (
-                                <div className="flex justify-end pt-2">
-                                  <button
-                                    onClick={() => handleCopyCode(msg.content, idx)}
-                                    className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-[#FACC15] transition cursor-pointer"
-                                  >
-                                    {copiedIndex === idx ? (
-                                      <>
-                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                        <span className="text-emerald-400">Copied</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="w-3.5 h-3.5" />
-                                        <span>Copy</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {msg.role === 'user' && (
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-400/40 uppercase">
-                            {user?.username ? user.username[0] : 'U'}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <div ref={bottomRef} />
-                  </div>
+                  </>
                 )}
+              </span>
+            </div>
+          </div>
+
+          {/* Model & Config Selectors */}
+          <div className="flex items-center justify-end gap-2 text-xs flex-1">
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="theme-toggle-btn p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer flex items-center justify-center shrink-0"
+            >
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
+            </button>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
+              {/* Jailbreak Selector */}
+              <select
+                value={jailbreak}
+                onChange={e => setJailbreak(e.target.value)}
+                className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
+              >
+                <option value="default" className="bg-[#182030]">Guided Mode</option>
+                <option value="gpt-dan-11.0" className="bg-[#182030]">Ask Anything</option>
+                <option value="gpt-evil" className="bg-[#182030]">Unrestricted Ask</option>
+              </select>
+
+              {/* Web Access Toggle */}
+              <button
+                type="button"
+                onClick={() => setWebAccess(!webAccess)}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition cursor-pointer ${webAccess
+                  ? 'bg-[#FACC15]/15 border-[#FACC15] text-[#FACC15]'
+                  : 'bg-[#182030] border-gray-700/80 text-gray-400 hover:text-gray-200'
+                  }`}
+                title="Toggle Web Search"
+              >
+                <Globe className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Web Search</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Chat Message List */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+          {messages.length === 0 ? (
+            <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
+              <div className="mb-4 sm:mb-5 flex items-center justify-center">
+                <ThinkingBulb state="lit" size={54} />
               </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
+                Welcome to <span className="text-[#FACC15]">sahajAI</span>
+              </h2>
+              <p className="text-gray-400 text-xs sm:text-sm max-w-md text-center mb-6 sm:mb-8 px-2">
+                Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
+                All conversations and outputs are saved securely.
+              </p>
 
-              {/* Input Bar Area */}
-              <div className="p-2 sm:p-4 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19] to-transparent shrink-0">
-                <div className="max-w-3xl mx-auto">
+              {/* Starter Prompts Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full">
+                {starterPrompts.map((card, i) => {
+                  const Icon = card.icon
+                  return (
+                    <div
+                      key={i}
+                      style={{ '--card-index': i } as React.CSSProperties}
+                      onClick={() => handleSend(card.prompt)}
+                      className="starter-card-anim group relative p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#141a27] border border-gray-800/90 hover:border-[#FACC15]/60 hover:bg-[#182030] cursor-pointer text-left select-none"
+                    >
+                      <div className="starter-card-shimmer" />
 
-                  {/* Hidden File Input */}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
-                    className="hidden"
-                  />
-
-                  {/* Attached Files Badges */}
-                  {(attachedFiles.length > 0 || isUploadingFile) && (
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
-                      {attachedFiles.map(file => (
-                        <div
-                          key={file.id}
-                          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-gray-700 text-[11px] sm:text-xs text-gray-200 shadow-sm"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
-                          <span className="max-w-[120px] sm:max-w-[150px] truncate font-medium">{file.original_name}</span>
-                          <span className="text-[9px] sm:text-[10px] text-emerald-400 font-mono">✓ Ready</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFile(file.id)}
-                            className="ml-0.5 sm:ml-1 p-0.5 hover:bg-gray-700 rounded-md text-gray-400 hover:text-red-400 transition"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                      <div className="flex items-start justify-between mb-2 sm:mb-2.5 relative z-10">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          <div className="starter-icon-wrap p-1.5 sm:p-2 rounded-xl bg-[#FACC15]/10 text-[#FACC15] group-hover:bg-[#FACC15] group-hover:text-[#0b0f19] group-hover:scale-110 group-hover:rotate-[-4deg] transition-all duration-300 shadow-sm">
+                            <Icon className="w-4 h-4 transition-colors" />
+                          </div>
+                          <span className="starter-tag text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-gray-800/80 text-gray-300 border border-gray-700/60 group-hover:border-[#FACC15]/40 group-hover:text-[#FACC15] transition-colors">
+                            {card.category}
+                          </span>
                         </div>
-                      ))}
-                      {isUploadingFile && (
-                        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-yellow-500/50 text-[11px] sm:text-xs text-[#FACC15] animate-pulse">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Processing...</span>
+                        <div className="flex items-center text-gray-500 group-hover:text-[#FACC15] group-hover:translate-x-1 opacity-60 group-hover:opacity-100 transition-all duration-200">
+                          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
-                      )}
+                      </div>
+
+                      <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#FACC15] transition-colors mb-1 relative z-10">
+                        {card.title}
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors relative z-10">
+                        {card.desc}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex gap-2 sm:gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {msg.role !== 'user' && (
+                    <div className="shrink-0 pt-0.5">
+                      <ThinkingBulb
+                        state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
+                        size={32}
+                      />
                     </div>
                   )}
 
-                  <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
-
-                    {/* File Attachment Button */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          onRequireAuth?.()
-                          return
-                        }
-                        fileInputRef.current?.click()
-                      }}
-                      disabled={isUploadingFile || isGenerating}
-                      className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
-                      title="Attach Document/File for context"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                    </button>
-
-                    <textarea
-                      className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-2.5 sm:py-3.5 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
-                      placeholder="Start Interacting..."
-                      value={input}
-                      onChange={e => setInput(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          if (!isAuthenticated) {
-                            onRequireAuth?.()
-                            return
-                          }
-                          if (input.trim() || attachedFiles.length > 0) {
-                            handleSend()
-                          }
-                        }
-                      }}
-                      disabled={isGenerating}
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          onRequireAuth?.()
-                          return
-                        }
-                        handleSend()
-                      }}
-                      disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
-                      className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
-                    >
-                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </button>
+                  <div
+                    className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
+                      ? 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
+                      : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
+                      }`}
+                  >
+                    {msg.role === 'user' ? (
+                      <div className="space-y-2">
+                        {msg.files && msg.files.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {msg.files.map(f => (
+                              <a
+                                key={f.id}
+                                href={`/api/files/${f.id}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141a27] border border-gray-700 hover:border-[#FACC15] text-xs text-[#FACC15] hover:underline transition cursor-pointer group"
+                                title="Click to view file"
+                              >
+                                <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
+                                <span className="font-medium">{f.original_name}</span>
+                                <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-[#FACC15]" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        {!msg.isAutoPrompt && (
+                          <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{msg.content}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
+                        {msg.content ? (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node, href, children, ...props }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                  {...props}
+                                >
+                                  <span>{children}</span>
+                                  <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                </a>
+                              ),
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
+                            <span></span><span></span><span></span>
+                          </span>
+                        )}
+                        {msg.content && (
+                          <div className="flex justify-end pt-2">
+                            <button
+                              onClick={() => handleCopyCode(msg.content, idx)}
+                              className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-[#FACC15] transition cursor-pointer"
+                            >
+                              {copiedIndex === idx ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-emerald-400">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
-                    <span className="hidden sm:inline">Shift + Enter for new line • Attach files with 📎</span>
-                    <span className="sm:hidden">Tap 📎 to attach files • Shift+Enter for new line</span>
-                  </div>
+                  {msg.role === 'user' && (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-400/40 uppercase">
+                      {user?.username ? user.username[0] : 'U'}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
 
+        {/* Input Bar Area */}
+        <div className="p-2 sm:p-4 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19] to-transparent shrink-0">
+          <div className="max-w-3xl mx-auto">
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
+              className="hidden"
+            />
+
+            {/* Attached Files Badges */}
+            {(attachedFiles.length > 0 || isUploadingFile) && (
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                {attachedFiles.map(file => (
+                  <div
+                    key={file.id}
+                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-gray-700 text-[11px] sm:text-xs text-gray-200 shadow-sm"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
+                    <span className="max-w-[120px] sm:max-w-[150px] truncate font-medium">{file.original_name}</span>
+                    <span className="text-[9px] sm:text-[10px] text-emerald-400 font-mono">✓ Ready</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(file.id)}
+                      className="ml-0.5 sm:ml-1 p-0.5 hover:bg-gray-700 rounded-md text-gray-400 hover:text-red-400 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {isUploadingFile && (
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-yellow-500/50 text-[11px] sm:text-xs text-[#FACC15] animate-pulse">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Processing...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
+
+              {/* File Attachment Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onRequireAuth?.()
+                    return
+                  }
+                  fileInputRef.current?.click()
+                }}
+                disabled={isUploadingFile || isGenerating}
+                className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
+                title="Attach Document/File for context"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+
+              <textarea
+                className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-2.5 sm:py-3.5 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
+                placeholder="Start Interacting..."
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (!isAuthenticated) {
+                      onRequireAuth?.()
+                      return
+                    }
+                    if (input.trim() || attachedFiles.length > 0) {
+                      handleSend()
+                    }
+                  }
+                }}
+                disabled={isGenerating}
+              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onRequireAuth?.()
+                    return
+                  }
+                  handleSend()
+                }}
+                disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
+                className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
+              >
+                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
             </div>
 
-            {/* Workspace Creation Modal */}
-            <WorkspaceModal isOpen={isCreateWsOpen} onClose={() => setIsCreateWsOpen(false)} />
+            <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
+              <span className="hidden sm:inline">Shift + Enter for new line • Attach files with 📎</span>
+              <span className="sm:hidden">Tap 📎 to attach files • Shift+Enter for new line</span>
+            </div>
           </div>
-          )
+        </div>
+      </div>
+
+      {/* Workspace Creation Modal */}
+      <WorkspaceModal isOpen={isCreateWsOpen} onClose={() => setIsCreateWsOpen(false)} />
+    </div>
+  )
 }
