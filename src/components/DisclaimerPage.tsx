@@ -60,7 +60,7 @@ export const DisclaimerPage: React.FC = () => {
           >
             <ThinkingBulb state="lit" size={30} />
             <span className="text-lg font-black tracking-tight">
-              <span className="text-[#FACC15]">sahaj</span>
+              <span className="text-yellow-500">sahaj</span>
               <span className={isLight ? 'text-gray-950' : 'text-white'}>AI</span>
             </span>
           </a>

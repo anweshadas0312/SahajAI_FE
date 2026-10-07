@@ -366,7 +366,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <ThinkingBulb state={isGenerating ? 'thinking' : 'lit'} size={36} />
                 </div>
                 <div>
-                  <h1 className="text-base font-extrabold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span></h1>
+                  <h1 className="text-base font-extrabold tracking-tight leading-none"><span className="text-yellow-500">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span></h1>
                 </div>
               </div>
 
@@ -772,7 +772,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 <ThinkingBulb state="lit" size={54} />
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-                Welcome to <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
+                Welcome to <span className="text-yellow-500">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
               </h2>
               <p className="text-gray-400 text-xs sm:text-sm max-w-md text-center mb-6 sm:mb-8 px-2">
                 Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.

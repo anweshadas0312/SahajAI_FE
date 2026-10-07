@@ -216,7 +216,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <ThinkingBulb state="lit" size={52} />
           </div>
           <h2 className="auth-modal-title text-2xl font-extrabold tracking-tight">
-            <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
+            <span className="text-yellow-500">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
           </h2>
           <p className="auth-modal-subtitle text-sm text-gray-400 mt-1">
             {isRegister ? 'Create your isolated workspace account' : 'Sign in to access your personal AI workspace'}

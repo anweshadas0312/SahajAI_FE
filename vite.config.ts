@@ -8,13 +8,13 @@ export default defineConfig({
   server: {
     proxy: {
       '/backend-api': {
-        target: 'https://aivista.co.in/sahajai',
+        target: process.env.VITE_BACKEND_URL,
         changeOrigin: true,
         secure: false,
         timeout: 600000,
       },
       '/api': {
-        target: 'https://aivista.co.in/sahajai',
+        target: process.env.VITE_BACKEND_URL,
         changeOrigin: true,
         secure: false,
         timeout: 600000,
