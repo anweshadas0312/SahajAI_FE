@@ -73,61 +73,54 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
   const bottomRef = useRef<HTMLDivElement>(null)
   const conversationIdRef = useRef<string>(currentConversationId || Math.random().toString(36).substring(2))
 
-  // Fetch attached files when conversation changes
+  // Reset composer attached files when conversation changes
   useEffect(() => {
-    if (currentConversationId) {
-      const token = localStorage.getItem('sahaj_token')
-      if (token) {
-        fetch(`/api/files/conversation/${currentConversationId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.files) {
-              setAttachedFiles(data.files)
-            }
-          })
-          .catch(err => console.error('Error fetching attached files:', err))
-      }
-    } else {
-      setAttachedFiles([])
-    }
+    setAttachedFiles([])
   }, [currentConversationId])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (!selectedFile) return
+    const selectedFiles = Array.from(e.target.files || [])
+    if (selectedFiles.length === 0) return
 
     setIsUploadingFile(true)
     const token = localStorage.getItem('sahaj_token')
+    const newUploadedFiles: UploadedFile[] = []
 
-    const formData = new FormData()
-    formData.append('file', selectedFile)
-    if (currentWorkspace?.id) {
-      formData.append('workspace_id', currentWorkspace.id.toString())
-    }
-    if (conversationIdRef.current) {
-      formData.append('conversation_id', conversationIdRef.current)
-    }
-
-    try {
-      const res = await fetch('/api/files/upload', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      })
-      const data = await res.json()
-      if (data.success && data.file) {
-        setAttachedFiles(prev => [...prev.filter(f => f.id !== data.file.id), data.file])
-      } else {
-        alert(`File upload failed: ${data.error || 'Unknown error'}`)
+    for (const selectedFile of selectedFiles) {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      if (currentWorkspace?.id) {
+        formData.append('workspace_id', currentWorkspace.id.toString())
       }
-    } catch (err: any) {
-      alert(`Upload error: ${err.message}`)
-    } finally {
-      setIsUploadingFile(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      if (conversationIdRef.current) {
+        formData.append('conversation_id', conversationIdRef.current)
+      }
+
+      try {
+        const res = await fetch('/api/files/upload', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        })
+        const data = await res.json()
+        if (data.success && data.file) {
+          newUploadedFiles.push(data.file)
+        } else {
+          console.warn(`File upload failed for ${selectedFile.name}:`, data.error)
+        }
+      } catch (err: any) {
+        console.error(`Upload error for ${selectedFile.name}:`, err)
+      }
     }
+
+    if (newUploadedFiles.length > 0) {
+      setAttachedFiles(prev => [
+        ...prev.filter(f => !newUploadedFiles.some(nu => nu.id === f.id)),
+        ...newUploadedFiles
+      ])
+    }
+    setIsUploadingFile(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleRemoveFile = async (fileId: string) => {
@@ -184,6 +177,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
     }
 
     const currentFiles = [...attachedFiles]
+    setAttachedFiles([])
     const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
     setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
     setIsGenerating(true)
@@ -702,6 +696,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
             {/* Hidden File Input */}
             <input
               type="file"
+              multiple
               ref={fileInputRef}
               onChange={handleFileUpload}
               accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
@@ -752,7 +747,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin }) => {
 
               <textarea
                 className="w-full bg-transparent text-white pl-2 pr-14 py-3.5 outline-none resize-none h-14 max-h-36 text-sm placeholder-gray-500"
-                placeholder={`Ask ${currentWorkspace?.name} anything (attach PDF, DOCX, CSV, Code...)...`}
+                placeholder="Start Interacting..."
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => {
