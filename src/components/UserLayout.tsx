@@ -867,7 +867,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             </button>
 
             <textarea
-              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-3.5 sm:py-4 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
+              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 pt-[14px] pb-2 sm:pt-[18px] sm:pb-3 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500 leading-tight"
               placeholder="Start Interacting..."
               value={input}
               onChange={e => setInput(e.target.value)}

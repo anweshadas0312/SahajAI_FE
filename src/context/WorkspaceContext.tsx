@@ -29,7 +29,7 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefin
 const DEFAULT_WORKSPACE_FALLBACK: Workspace = {
   id: 1,
   user_id: 1,
-  name: 'Sahaj Workspace',
+  name: 'Default Workspace',
   description: 'Personal AI Workspace for exploration, code, and analysis',
   icon_color: '#FACC15',
   is_default: true,
