@@ -46,6 +46,23 @@ body {
   width: 100%;
 }
 
+body:has(#privacy-policy-page),
+body:has(#disclaimer-page),
+body:has(#terms-page) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 100vh;
+}
+
+#root:has(#privacy-policy-page),
+#root:has(#disclaimer-page),
+#root:has(#terms-page) {
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

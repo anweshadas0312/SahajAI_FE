@@ -1,8 +1,21 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { User as UserIcon, Lock, Mail, ArrowRight, AlertCircle, X, Eye, EyeOff, Sun, Moon } from 'lucide-react'
+import {
+  User as UserIcon,
+  Lock,
+  Mail,
+  ArrowRight,
+  AlertCircle,
+  X,
+  Eye,
+  EyeOff,
+  Sun,
+  Moon,
+  RotateCw,
+  ShieldCheck,
+} from 'lucide-react'
 import { ThinkingBulb } from './ThinkingBulb'
 
 interface AuthModalProps {
@@ -22,12 +35,102 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // CAPTCHA Challenge State
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [captchaCode, setCaptchaCode] = useState('')
+  const [captchaInput, setCaptchaInput] = useState('')
+
+  const refreshCaptcha = useCallback(() => {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setCaptchaCode(code)
+    setCaptchaInput('')
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      refreshCaptcha()
+    }
+  }, [isOpen, isRegister, refreshCaptcha])
+
+  // Draw visually distorted security CAPTCHA canvas
+  useEffect(() => {
+    if (!captchaCode || !canvasRef.current) return
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const width = canvas.width
+    const height = canvas.height
+
+    // Background fill
+    ctx.fillStyle = theme === 'light' ? '#f1f5f9' : '#0a0f1d'
+    ctx.fillRect(0, 0, width, height)
+
+    // Noise wave lines
+    const colors = ['#FACC15', '#38BDF8', '#F43F5E', '#A855F7', '#10B981', '#F59E0B']
+    for (let i = 0; i < 4; i++) {
+      ctx.strokeStyle = colors[i % colors.length]
+      ctx.lineWidth = 1 + Math.random() * 1.2
+      ctx.beginPath()
+      ctx.moveTo(Math.random() * 15, Math.random() * height)
+      ctx.bezierCurveTo(
+        Math.random() * width, Math.random() * height,
+        Math.random() * width, Math.random() * height,
+        width - Math.random() * 15, Math.random() * height
+      )
+      ctx.stroke()
+    }
+
+    // Noise dots
+    for (let i = 0; i < 28; i++) {
+      ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)]
+      ctx.beginPath()
+      ctx.arc(Math.random() * width, Math.random() * height, 1.2, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // Draw characters with random rotation, spacing & color
+    const charSpacing = (width - 24) / captchaCode.length
+    for (let i = 0; i < captchaCode.length; i++) {
+      ctx.save()
+      const char = captchaCode[i]
+      const x = 14 + i * charSpacing
+      const y = height / 2 + 6 + (Math.random() * 4 - 2)
+      const angle = (Math.random() - 0.5) * 0.35
+
+      ctx.translate(x, y)
+      ctx.rotate(angle)
+      ctx.font = 'bold 20px "Courier New", monospace'
+      ctx.fillStyle = colors[i % colors.length]
+      ctx.fillText(char, 0, 0)
+      ctx.restore()
+    }
+  }, [captchaCode, theme])
+
   if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsSubmitting(true)
+
+    // Validate CAPTCHA
+    if (!captchaInput.trim()) {
+      setError('Please enter the 6-character security verification code.')
+      setIsSubmitting(false)
+      return
+    }
+
+    if (captchaInput.trim().toUpperCase() !== captchaCode.toUpperCase()) {
+      setError('Incorrect CAPTCHA verification code. A new code has been generated.')
+      refreshCaptcha()
+      setIsSubmitting(false)
+      return
+    }
 
     if (isRegister) {
       if (!username || !email || !password) {
@@ -38,6 +141,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       const res = await register(username, email, password)
       if (!res.success) {
         setError(res.error || 'Registration failed')
+        refreshCaptcha()
       } else if (onClose) {
         onClose()
       }
@@ -50,6 +154,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       const res = await login(identifier, password)
       if (!res.success) {
         setError(res.error || 'Login failed')
+        refreshCaptcha()
       } else if (onClose) {
         onClose()
       }
@@ -201,6 +306,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <Eye className="w-4 h-4" />
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* Security CAPTCHA Challenge */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="auth-modal-label flex items-center gap-1.5 text-xs font-medium text-gray-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#FACC15]" />
+                <span>Security Verification</span>
+              </label>
+              <button
+                type="button"
+                onClick={refreshCaptcha}
+                className="flex items-center gap-1 text-[11px] text-[#FACC15] hover:underline transition cursor-pointer"
+                title="Generate new CAPTCHA"
+              >
+                <RotateCw className="w-3 h-3" />
+                <span>Change Code</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              {/* Canvas Preview Badge */}
+              <div
+                onClick={refreshCaptcha}
+                title="Click to refresh CAPTCHA code"
+                className="relative border border-gray-700/80 rounded-xl overflow-hidden bg-gray-950 shrink-0 shadow-inner cursor-pointer hover:border-[#FACC15]/60 transition"
+              >
+                <canvas
+                  ref={canvasRef}
+                  width={140}
+                  height={42}
+                  className="block"
+                />
+              </div>
+
+              {/* CAPTCHA Input Field */}
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                  placeholder="Enter 6-char code"
+                  className="auth-modal-input w-full px-3.5 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm tracking-wider uppercase font-mono focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                />
+              </div>
             </div>
           </div>
 

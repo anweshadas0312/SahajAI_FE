@@ -201,6 +201,12 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     if (!promptToSend || isGenerating) return
     setInput('')
 
+    const currentFiles = [...attachedFiles]
+    setAttachedFiles([])
+    const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
+    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
+    setIsGenerating(true)
+
     // Ensure we have a conversation created
     const shortTitle = promptToSend.slice(0, 32) + (promptToSend.length > 32 ? '...' : '')
     let activeId = currentConversationId || conversationIdRef.current
@@ -210,12 +216,6 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     } else if (messages.length === 0 && activeId) {
       updateConversationTitle(activeId, shortTitle)
     }
-
-    const currentFiles = [...attachedFiles]
-    setAttachedFiles([])
-    const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
-    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
-    setIsGenerating(true)
 
     try {
       const streamToken = Math.random().toString(36).substring(2)
@@ -246,6 +246,18 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         }),
       })
 
+      if (!response.ok) {
+        if (response.status === 504) {
+          throw new Error('GATEWAY_TIMEOUT_504')
+        } else if (response.status === 502) {
+          throw new Error('BAD_GATEWAY_502')
+        } else if (response.status === 401 || response.status === 403) {
+          throw new Error('AUTH_ERROR')
+        } else {
+          throw new Error(`HTTP_ERROR_${response.status}`)
+        }
+      }
+
       if (!response.body) throw new Error('No response body stream')
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
@@ -255,11 +267,30 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         const { value, done } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
+
+        // Safety check: if backend/proxy returned an HTML error page instead of stream
+        if ((assistantContent + chunk).trim().toLowerCase().startsWith('<html') || 
+            (assistantContent + chunk).trim().toLowerCase().startsWith('<!doctype')) {
+          throw new Error('GATEWAY_TIMEOUT_504')
+        }
+
         assistantContent += chunk
         setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat generation error:', error)
+      let customNotice = '⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.'
+      
+      if (error?.message === 'GATEWAY_TIMEOUT_504') {
+        customNotice = '⚠️ **Gateway Timeout (504)**: The server took too long to process this request (especially with document/CSV analysis). The AI model or upstream Nginx server timed out. Please try again or check Nginx `proxy_read_timeout` on the server.'
+      } else if (error?.message === 'BAD_GATEWAY_502') {
+        customNotice = '⚠️ **Bad Gateway (502)**: The AI backend service is currently offline or unreachable.'
+      } else if (error?.message === 'AUTH_ERROR') {
+        customNotice = '⚠️ **Authentication Required**: Your session has expired. Please log in again.'
+      } else if (error?.message?.startsWith('HTTP_ERROR_')) {
+        customNotice = `⚠️ **Server Error (${error.message.replace('HTTP_ERROR_', '')})**: The server encountered an issue processing your request.`
+      }
+
       setMessages(prev => {
         const last = prev[prev.length - 1]
         return [
@@ -267,8 +298,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           {
             ...last,
             content:
-              (last ? last.content : '') +
-              '\n\n> ⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.',
+              (last && !last.content.trim().toLowerCase().startsWith('<html') ? last.content : '') +
+              `\n\n> ${customNotice}`,
           },
         ]
       })
@@ -517,8 +548,42 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
                       {isHelpSubmenuOpen && (
                         <div className={`absolute left-full bottom-0 ml-1 w-48 border rounded-xl shadow-xl overflow-hidden p-1 z-50 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
-                          <a onClick={() => { setIsHelpSubmenuOpen(false); setIsProfileMenuOpen(false); }} href="https://sahaj.ai/privacy-policy" target="_blank" rel="noreferrer" className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}>Privacy Policy</a>
-                          <a onClick={() => { setIsHelpSubmenuOpen(false); setIsProfileMenuOpen(false); }} href="https://sahaj.ai/terms" target="_blank" rel="noreferrer" className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}>Terms and Conditions</a>
+                          <a
+                            href="/privacy-policy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              setIsHelpSubmenuOpen(false)
+                              setIsProfileMenuOpen(false)
+                            }}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                          >
+                            Privacy Policy
+                          </a>
+                          <a
+                            href="/disclaimer"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              setIsHelpSubmenuOpen(false)
+                              setIsProfileMenuOpen(false)
+                            }}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                          >
+                            Disclaimer
+                          </a>
+                          <a
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => {
+                              setIsHelpSubmenuOpen(false)
+                              setIsProfileMenuOpen(false)
+                            }}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                          >
+                            Terms and Conditions
+                          </a>
                         </div>
                       )}
                     </div>
@@ -701,7 +766,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
         {/* Chat Message List */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-          {messages.length === 0 ? (
+          {messages.length === 0 && !isGenerating ? (
             <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
               <div className="mb-4 sm:mb-5 flex items-center justify-center">
                 <ThinkingBulb state="lit" size={54} />
