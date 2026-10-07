@@ -15,7 +15,7 @@ interface WorkspaceContextType {
   setCurrentConversationId: (id: string | null) => void
   messages: ChatMessage[]
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
-  createNewConversation: (model: string, jailbreak: string) => Promise<string>
+  createNewConversation: (model: string, jailbreak: string, title?: string) => Promise<string>
   deleteConversation: (id: string) => Promise<boolean>
   updateConversationTitle: (id: string, title: string) => Promise<boolean>
   isLoadingWorkspaces: boolean
@@ -29,8 +29,8 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefin
 const DEFAULT_WORKSPACE_FALLBACK: Workspace = {
   id: 1,
   user_id: 1,
-  name: 'Default Workspace',
-  description: 'Primary AI Workspace for analysis and code',
+  name: 'Sahaj Workspace',
+  description: 'Personal AI Workspace for exploration, code, and analysis',
   icon_color: '#FACC15',
   is_default: true,
   conversation_count: 0,
@@ -286,13 +286,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return true
   }
 
-  const createNewConversation = async (model: string, jailbreak: string) => {
+  const createNewConversation = async (model: string, jailbreak: string, title?: string) => {
     const newId = Math.random().toString(36).substring(2) + Date.now().toString(36)
     const newConv: Conversation = {
       id: newId,
       workspace_id: currentWorkspace?.id || 1,
       user_id: user?.id || 1,
-      title: 'New Conversation',
+      title: title || 'New Conversation',
       model,
       jailbreak,
       created_at: new Date().toISOString(),
@@ -311,12 +311,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn('API conv create note:', e)
     }
 
-    const updated = [newConv, ...conversations]
-    setConversations(updated)
+    setConversations(prev => {
+      const updated = [newConv, ...prev.filter(c => c.id !== newId)]
+      if (user && currentWorkspace) {
+        localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
+      }
+      return updated
+    })
     setCurrentConversationId(newId)
-    if (user && currentWorkspace) {
-      localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
-    }
     return newId
   }
 
@@ -332,14 +334,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn('API conv delete note:', e)
     }
 
-    const updated = conversations.filter(c => c.id !== id)
-    setConversations(updated)
+    setConversations(prev => {
+      const updated = prev.filter(c => c.id !== id)
+      if (user && currentWorkspace) {
+        localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
+      }
+      return updated
+    })
     if (currentConversationId === id) {
       setCurrentConversationId(null)
       setMessages([])
-    }
-    if (user && currentWorkspace) {
-      localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
     }
     return true
   }
@@ -357,11 +361,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn('API conv title note:', e)
     }
 
-    const updated = conversations.map(c => (c.id === id ? { ...c, title } : c))
-    setConversations(updated)
-    if (user && currentWorkspace) {
-      localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
-    }
+    setConversations(prev => {
+      const updated = prev.map(c => (c.id === id ? { ...c, title } : c))
+      if (user && currentWorkspace) {
+        localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
+      }
+      return updated
+    })
     return true
   }
 

@@ -40,8 +40,8 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-md bg-[#161b22] border border-gray-700/80 rounded-2xl shadow-2xl p-6 text-white overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-md bg-[#161b22] border border-gray-700/80 rounded-2xl shadow-2xl p-5 sm:p-6 text-white overflow-hidden my-auto">
         {/* Close Button */}
         <button
           onClick={onClose}

@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../context/AuthContext'
-import { Sparkles, User as UserIcon, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
+import { User as UserIcon, Lock, Mail, ArrowRight, AlertCircle, X, Eye, EyeOff, Sun, Moon } from 'lucide-react'
+import { ThinkingBulb } from './ThinkingBulb'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -10,11 +12,13 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { login, register, loginWithGoogle } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [isRegister, setIsRegister] = useState(false)
   const [identifier, setIdentifier] = useState('')
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -39,7 +43,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
     } else {
       if (!identifier || !password) {
-        setError('Please enter username/email and password')
+        setError('Please enter your email and password')
         setIsSubmitting(false)
         return
       }
@@ -70,16 +74,41 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   }
 
   return (
-    <div className="auth-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all">
-      <div className="auth-modal-card relative w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl p-7 overflow-hidden transition-colors">
+    <div
+      onClick={e => {
+        if (e.target === e.currentTarget && onClose) onClose()
+      }}
+      className="auth-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto transition-all"
+    >
+      <div className="auth-modal-card relative w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl p-6 sm:p-7 overflow-hidden transition-colors my-auto">
+        {/* Theme Switcher Button */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="absolute top-4 left-4 p-1.5 rounded-lg text-gray-400 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer z-10"
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-amber-500" />}
+        </button>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition cursor-pointer z-10"
+            title="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
         {/* Glow accent */}
         <div className="auth-glow-top absolute -top-16 -right-16 w-36 h-36 bg-[#FACC15]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="auth-glow-bottom absolute -bottom-16 -left-16 w-36 h-36 bg-[#FACC15]/5 rounded-full blur-3xl pointer-events-none" />
 
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="auth-icon-badge inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#FACC15]/10 border border-[#FACC15]/20 text-[#FACC15] mb-3 shadow-lg">
-            <Sparkles className="w-7 h-7" />
+          <div className="mb-3 flex items-center justify-center">
+            <ThinkingBulb state="lit" size={52} />
           </div>
           <h2 className="auth-modal-title text-2xl font-bold text-white tracking-tight">sahajAI Workspace</h2>
           <p className="auth-modal-subtitle text-sm text-gray-400 mt-1">
@@ -131,15 +160,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             </>
           ) : (
             <div>
-              <label className="auth-modal-label block text-xs font-medium text-gray-300 mb-1.5">Username or Email</label>
+              <label className="auth-modal-label block text-xs font-medium text-gray-300 mb-1.5">Email</label>
               <div className="relative">
                 <Mail className="auth-modal-input-icon absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
-                  type="text"
+                  type="email"
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="admin or user@sahaj.ai"
+                  placeholder="user@sahaj.ai"
                   className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
                 />
               </div>
@@ -151,13 +180,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             <div className="relative">
               <Lock className="auth-modal-input-icon absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                className="auth-modal-input w-full pl-10 pr-10 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 focus:outline-none p-1 rounded-md transition cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
 
