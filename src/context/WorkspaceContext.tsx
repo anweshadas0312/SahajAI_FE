@@ -150,7 +150,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         })
         if (res.ok) {
           const data = await res.json()
-          if (data.success && Array.isArray(data.messages) && data.messages.length > 0) {
+          if (data.success && Array.isArray(data.messages)) {
             setMessages(data.messages)
             return
           }
@@ -166,7 +166,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setMessages(parsed)
           return
         }
@@ -174,6 +174,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         // ignore
       }
     }
+    setMessages([])
   }
 
   useEffect(() => {
@@ -301,11 +302,24 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     try {
       if (token && !token.startsWith('demo_token_')) {
-        await fetch(API_ENDPOINTS.WORKSPACES.CONVERSATIONS(newConv.workspace_id), {
+        const res = await fetch(API_ENDPOINTS.WORKSPACES.CONVERSATIONS(newConv.workspace_id), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(newConv),
+          body: JSON.stringify({
+            conversation_id: newId,
+            id: newId,
+            workspace_id: newConv.workspace_id,
+            title: newConv.title,
+            model: newConv.model,
+            jailbreak: newConv.jailbreak,
+          }),
         })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.success && data.conversation && data.conversation.id) {
+            newConv.id = data.conversation.id
+          }
+        }
       }
     } catch (e) {
       console.warn('API conv create note:', e)
