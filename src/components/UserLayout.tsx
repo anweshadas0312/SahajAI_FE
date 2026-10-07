@@ -336,7 +336,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <ThinkingBulb state={isGenerating ? 'thinking' : 'lit'} size={36} />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className="text-white">AI</span></h1>
+                  <h1 className="text-base font-extrabold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span></h1>
                 </div>
               </div>
 
@@ -511,13 +511,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               </div>
 
               <div className="flex items-center gap-1">
-                <button
-                  onClick={toggleTheme}
-                  title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                  className="theme-toggle-btn p-1.5 rounded-lg text-gray-400 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer"
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
+
 
                 <button
                   onClick={logout}
@@ -606,7 +600,19 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               {/* Jailbreak Selector */}
               <select
                 value={jailbreak}
-                onChange={e => setJailbreak(e.target.value)}
+                onMouseDown={e => {
+                  if (!isAuthenticated && onRequireAuth) {
+                    e.preventDefault()
+                    onRequireAuth()
+                  }
+                }}
+                onChange={e => {
+                  if (!isAuthenticated && onRequireAuth) {
+                    onRequireAuth()
+                    return
+                  }
+                  setJailbreak(e.target.value)
+                }}
                 className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
               >
                 <option value="default" className="bg-[#182030]">Guided Mode</option>
@@ -617,7 +623,13 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               {/* Web Access Toggle */}
               <button
                 type="button"
-                onClick={() => setWebAccess(!webAccess)}
+                onClick={() => {
+                  if (!isAuthenticated && onRequireAuth) {
+                    onRequireAuth()
+                    return
+                  }
+                  setWebAccess(!webAccess)
+                }}
                 className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition cursor-pointer ${webAccess
                   ? 'bg-[#FACC15]/15 border-[#FACC15] text-[#FACC15]'
                   : 'bg-[#182030] border-gray-700/80 text-gray-400 hover:text-gray-200'
@@ -639,7 +651,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               <ThinkingBulb state="lit" size={54} />
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-              Welcome to <span className="text-[#FACC15]">sahajAI</span>
+              Welcome to <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
             </h2>
             <p className="text-gray-400 text-xs sm:text-sm max-w-md text-center mb-6 sm:mb-8 px-2">
               Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
@@ -855,7 +867,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             </button>
 
             <textarea
-              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-2.5 sm:py-3.5 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
+              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-3.5 sm:py-4 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
               placeholder="Start Interacting..."
               value={input}
               onChange={e => setInput(e.target.value)}

@@ -110,7 +110,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <div className="mb-3 flex items-center justify-center">
             <ThinkingBulb state="lit" size={52} />
           </div>
-          <h2 className="auth-modal-title text-2xl font-bold text-white tracking-tight">sahajAI Workspace</h2>
+          <h2 className="auth-modal-title text-2xl font-extrabold tracking-tight">
+            <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
+          </h2>
           <p className="auth-modal-subtitle text-sm text-gray-400 mt-1">
             {isRegister ? 'Create your isolated workspace account' : 'Sign in to access your personal AI workspace'}
           </p>
@@ -207,7 +209,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             disabled={isSubmitting}
             className="auth-modal-submit-btn w-full mt-2 py-3 px-4 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-semibold rounded-xl flex items-center justify-center gap-2 transition duration-200 shadow-lg shadow-yellow-500/20 disabled:opacity-50 cursor-pointer"
           >
-            <span>{isSubmitting ? 'Please wait...' : isRegister ? 'Create Workspace' : 'Sign In'}</span>
+            <span>{isSubmitting ? 'Please wait...' : isRegister ? 'Sign Up' : 'Sign In'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
