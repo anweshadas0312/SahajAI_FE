@@ -11,7 +11,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
 } from 'recharts';
 import { PieChart as PieIcon, BarChart3, LineChart as LineIcon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
@@ -35,6 +34,8 @@ const COLORS = [
   '#3B82F6', // Blue
   '#22C55E', // Green
   '#EF4444', // Red
+  '#6366F1', // Indigo
+  '#14B8A6', // Teal
 ];
 
 interface ChartRendererProps {
@@ -64,7 +65,7 @@ const CustomTooltip = ({ active, payload, totalValue, isDark }: any) => {
         <div className="flex items-center gap-2 mb-1">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
           <span
-            className="font-bold text-xs max-w-[200px] truncate"
+            className="font-bold text-xs max-w-[220px] truncate"
             style={{ color: isDark ? '#ffffff' : '#0f172a' }}
           >
             {name}
@@ -80,6 +81,42 @@ const CustomTooltip = ({ active, payload, totalValue, isDark }: any) => {
     );
   }
   return null;
+};
+
+// Custom Line Dot component to match each data point dot color with its category color
+const CustomLineDot = (props: any) => {
+  const { cx, cy, index } = props;
+  if (cx === undefined || cy === undefined) return null;
+  const color = COLORS[index % COLORS.length];
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={5}
+      fill={color}
+      stroke="#ffffff"
+      strokeWidth={1.5}
+    />
+  );
+};
+
+// Custom Active Dot component on hover
+const CustomActiveDot = (props: any) => {
+  const { cx, cy, index } = props;
+  if (cx === undefined || cy === undefined) return null;
+  const color = COLORS[index % COLORS.length];
+
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={7.5}
+      fill={color}
+      stroke="#ffffff"
+      strokeWidth={2}
+    />
+  );
 };
 
 export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => {
@@ -123,11 +160,10 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
   const cardTextColor = isDark ? '#e5e7eb' : '#1f2937';
   const axisColor = isDark ? '#9ca3af' : '#6b7280';
   const axisTickColor = isDark ? '#e5e7eb' : '#374151';
-  const legendTextColor = isDark ? '#e5e7eb' : '#374151';
 
   return (
     <div
-      className="my-4 p-4 rounded-xl border shadow-md transition-colors not-prose"
+      className="my-4 p-4 rounded-xl border shadow-md transition-colors not-prose overflow-hidden"
       style={{
         backgroundColor: containerBg,
         borderColor: containerBorder,
@@ -196,28 +232,23 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
       </div>
 
       {/* Chart Canvas */}
-      <div className="w-full h-64 sm:h-72">
+      <div className="w-full h-72 sm:h-80 relative">
         <ResponsiveContainer width="100%" height="100%">
           {activeType === 'pie' ? (
-            <PieChart>
+            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(value) => <span style={{ color: legendTextColor, fontSize: '11px', fontWeight: 600 }}>{value}</span>}
-              />
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                outerRadius={85}
-                innerRadius={35}
+                outerRadius={95}
+                innerRadius={40}
                 paddingAngle={4}
                 dataKey="value"
                 nameKey="name"
                 label={({ name, percent }: { name?: string; percent?: number }) => {
                   const labelName = name ?? '';
-                  const shortName = labelName.length > 12 ? labelName.substring(0, 10) + '...' : labelName;
+                  const shortName = labelName.length > 10 ? labelName.substring(0, 8) + '...' : labelName;
                   return `${shortName} (${((percent || 0) * 100).toFixed(0)}%)`;
                 }}
                 labelLine={false}
@@ -228,14 +259,15 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
               </Pie>
             </PieChart>
           ) : activeType === 'bar' ? (
-            <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 25 }}>
+            <BarChart data={data} margin={{ top: 15, right: 20, left: 0, bottom: 55 }}>
               <XAxis
                 dataKey="name"
                 stroke={axisColor}
                 tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }}
                 interval={0}
-                angle={-20}
+                angle={-25}
                 textAnchor="end"
+                tickFormatter={(val: string) => (val.length > 12 ? val.substring(0, 10) + '...' : val)}
               />
               <YAxis stroke={axisColor} tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }} />
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
@@ -246,13 +278,14 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
               </Bar>
             </BarChart>
           ) : (
-            <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 25 }}>
+            <LineChart data={data} margin={{ top: 15, right: 20, left: 0, bottom: 55 }}>
               <XAxis
                 dataKey="name"
                 stroke={axisColor}
                 tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }}
-                angle={-20}
+                angle={-25}
                 textAnchor="end"
+                tickFormatter={(val: string) => (val.length > 12 ? val.substring(0, 10) + '...' : val)}
               />
               <YAxis stroke={axisColor} tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }} />
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
@@ -261,21 +294,25 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
                 dataKey="value"
                 stroke={accentGold}
                 strokeWidth={3}
-                dot={{ fill: accentGold, r: 5 }}
-                activeDot={{ r: 7, fill: '#0284C7' }}
+                dot={<CustomLineDot />}
+                activeDot={<CustomActiveDot />}
               />
             </LineChart>
           )}
         </ResponsiveContainer>
       </div>
 
-      {/* Summary Legend Breakdown */}
-      <div className="mt-3 pt-3 border-t grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs" style={{ borderColor: containerBorder }}>
-        {data.slice(0, 8).map((item, idx) => (
+      {/* Clean Scrollable Summary Cards Grid */}
+      <div
+        className="mt-4 pt-3 border-t grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs max-h-48 overflow-y-auto"
+        style={{ borderColor: containerBorder }}
+      >
+        {data.map((item, idx) => (
           <div
             key={idx}
-            className="flex items-center gap-2 p-2 rounded-lg border transition-colors"
+            className="flex items-center gap-2 p-2 rounded-lg border transition-colors shadow-sm"
             style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+            title={`${item.name}: ${Number(item.value).toLocaleString()}`}
           >
             <span
               className="w-2.5 h-2.5 rounded-sm shrink-0"
@@ -284,7 +321,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
             <span className="truncate font-medium text-xs" style={{ color: cardTextColor }}>
               {item.name}
             </span>
-            <span className="ml-auto font-bold text-xs" style={{ color: accentGold }}>
+            <span className="ml-auto font-bold text-xs shrink-0" style={{ color: accentGold }}>
               {Number(item.value).toLocaleString()}
             </span>
           </div>

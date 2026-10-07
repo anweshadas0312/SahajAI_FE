@@ -44,6 +44,66 @@ interface UserLayoutProps {
   onRequireAuth?: () => void
 }
 
+// Fallback helper to extract chart data if AI model outputs text bullet points, tables, or prose instead of ```chart codeblock
+const extractChartFromText = (text: string) => {
+  if (!text || text.includes('```chart')) return null
+
+  const lower = text.toLowerCase()
+  const lines = text.split('\n')
+  const items: { name: string; value: number }[] = []
+
+  for (const line of lines) {
+    const cleanLine = line.replace(/[\*\_\`]/g, '').trim()
+    if (!cleanLine) continue
+
+    // Pattern 1: Table row | Gold | 22956 | or | Gold | $22,956 |
+    if (cleanLine.startsWith('|') && cleanLine.endsWith('|')) {
+      const cells = cleanLine.split('|').map(c => c.trim()).filter(Boolean)
+      if (cells.length >= 2) {
+        const nameCandidate = cells[0]
+        const valCandidate = parseFloat(cells[1].replace(/[\$,]/g, ''))
+        if (nameCandidate && !isNaN(valCandidate) && valCandidate > 0) {
+          const lowerC = nameCandidate.toLowerCase()
+          const isMeta = ['category', 'item', 'metal', 'type', 'name', '---', 'header', 'label', 'parameter', 'id'].some(k => lowerC.includes(k))
+          if (!isMeta) {
+            if (!items.some(it => it.name.toLowerCase() === lowerC)) {
+              items.push({ name: nameCandidate, value: valCandidate })
+            }
+          }
+        }
+      }
+      continue
+    }
+
+    // Pattern 2: Key-value lines: "Gold: 22,956" or "• Gold: 48.9%" or "Gold - $22,956"
+    const match = cleanLine.match(/^[-*•\d\.\)]*\s*([A-Za-z0-9\s\-\/]+?)[:=]\s*(?:[^0-9\n]*?)\$?([0-9]+(?:[\.,][0-9]+)?)%?/i)
+    if (match) {
+      const rawName = match[1].trim()
+      const rawVal = parseFloat(match[2].replace(/,/g, ''))
+      if (rawName && !isNaN(rawVal) && rawVal > 0) {
+        const lowerName = rawName.toLowerCase()
+        const isMeta = ['date range', 'metal types', 'order number', 'total sales', 'explanation', 'most sold metals', 'average cost', 'item types', 'pie chart', 'bar chart', 'summary', 'key topics', 'data table', 'chart title', 'subtitle', 'price level', 'order count'].some(k => lowerName.includes(k))
+        if (!isMeta) {
+          if (!items.some(it => it.name.toLowerCase() === lowerName)) {
+            items.push({ name: rawName, value: rawVal })
+          }
+        }
+      }
+    }
+  }
+
+  if (items.length >= 2) {
+    const chartType = lower.includes('bar chart') ? 'bar' : 'pie'
+    return {
+      type: chartType,
+      title: chartType === 'bar' ? 'Bar Chart Visualization' : 'Pie Chart Breakdown',
+      data: items,
+    }
+  }
+
+  return null
+}
+
 export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequireAuth }) => {
   const { user, token: authToken, logout, isAdmin, isAuthenticated } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -867,59 +927,67 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                     ) : (
                       <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
                         {msg.content ? (
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              a: ({ node, href, children, ...props }) => (
-                                <a
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
-                                  {...props}
-                                >
-                                  <span>{children}</span>
-                                  <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
-                                </a>
-                              ),
-                              code: ({ node, inline, className, children, ...props }: any) => {
-                                const match = /language-(\w+)/.exec(className || '');
-                                const lang = match ? match[1].toLowerCase() : '';
-                                const rawContent = String(children).replace(/\n$/, '').trim();
+                          <>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                a: ({ node, href, children, ...props }) => (
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                    {...props}
+                                  >
+                                    <span>{children}</span>
+                                    <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                  </a>
+                                ),
+                                code: ({ node, inline, className, children, ...props }: any) => {
+                                  const match = /language-(\w+)/.exec(className || '');
+                                  const lang = match ? match[1].toLowerCase() : '';
+                                  const rawContent = String(children).replace(/\n$/, '').trim();
 
-                                if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
-                                  try {
-                                    const parsed = JSON.parse(rawContent);
-                                    if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
-                                      if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
-                                        parsed.type = lang;
+                                  if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
+                                    try {
+                                      const parsed = JSON.parse(rawContent);
+                                      if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
+                                        if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
+                                          parsed.type = lang;
+                                        }
+                                        if (Array.isArray(parsed.data) && parsed.data.length > 0) {
+                                          return <ChartRenderer dataPayload={parsed} />;
+                                        }
                                       }
-                                      if (Array.isArray(parsed.data) && parsed.data.length > 0) {
-                                        return <ChartRenderer dataPayload={parsed} />;
-                                      }
+                                    } catch (e) {
+                                      // Not valid JSON chart data, fallback to normal code block
                                     }
-                                  } catch (e) {
-                                    // Not valid JSON chart data, fallback to normal code block
                                   }
-                                }
 
-                                if (inline) {
+                                  if (inline) {
+                                    return (
+                                      <code className="bg-[#141a27] text-[#FACC15] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  }
                                   return (
-                                    <code className="bg-[#141a27] text-[#FACC15] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
-                                      {children}
-                                    </code>
+                                    <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
+                                      <code>{children}</code>
+                                    </pre>
                                   );
-                                }
-                                return (
-                                  <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
-                                    <code>{children}</code>
-                                  </pre>
-                                );
-                              },
-                            }}
-                          >
-                            {msg.content}
-                          </ReactMarkdown>
+                                },
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+
+                            {/* Fallback chart extractor if model wrote text breakdown without ```chart block */}
+                            {(() => {
+                              const fallbackChart = extractChartFromText(msg.content)
+                              return fallbackChart ? <ChartRenderer dataPayload={fallbackChart} /> : null
+                            })()}
+                          </>
                         ) : (
                           <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
                             <span></span><span></span><span></span>
