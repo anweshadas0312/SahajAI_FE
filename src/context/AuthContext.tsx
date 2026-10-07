@@ -20,7 +20,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    const cached = localStorage.getItem('sahaj_cached_user')
+    if (cached) {
+      try {
+        return JSON.parse(cached)
+      } catch {
+        return null
+      }
+    }
+    return null
+  })
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('sahaj_token'))
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [dbConnected, setDbConnected] = useState<boolean>(false)
@@ -48,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = await res.json()
         if (data.success && data.user) {
           setUser(data.user)
+          localStorage.setItem('sahaj_cached_user', JSON.stringify(data.user))
           return true
         }
       }

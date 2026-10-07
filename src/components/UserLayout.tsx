@@ -84,25 +84,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   const bottomRef = useRef<HTMLDivElement>(null)
   const conversationIdRef = useRef<string>(currentConversationId || Math.random().toString(36).substring(2))
 
-  // Fetch attached files when conversation changes
+  // Reset composer attached files when conversation changes
   useEffect(() => {
-    if (currentConversationId) {
-      const token = localStorage.getItem('sahaj_token')
-      if (token) {
-        fetch(`/api/files/conversation/${currentConversationId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.files) {
-              setAttachedFiles(data.files)
-            }
-          })
-          .catch(err => console.error('Error fetching attached files:', err))
-      }
-    } else {
-      setAttachedFiles([])
-    }
+    setAttachedFiles([])
   }, [currentConversationId])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,39 +95,53 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       onRequireAuth?.()
       return
     }
-    const selectedFile = e.target.files?.[0]
-    if (!selectedFile) return
+    const selectedFiles = Array.from(e.target.files || [])
+    if (selectedFiles.length === 0) return
 
     setIsUploadingFile(true)
     const token = localStorage.getItem('sahaj_token')
+    const newUploadedFiles: UploadedFile[] = []
 
-    const formData = new FormData()
-    formData.append('file', selectedFile)
-    if (currentWorkspace?.id) {
-      formData.append('workspace_id', currentWorkspace.id.toString())
-    }
-    if (conversationIdRef.current) {
-      formData.append('conversation_id', conversationIdRef.current)
-    }
-
-    try {
-      const res = await fetch('/api/files/upload', {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      })
-      const data = await res.json()
-      if (data.success && data.file) {
-        setAttachedFiles(prev => [...prev.filter(f => f.id !== data.file.id), data.file])
-      } else {
-        alert(`File upload failed: ${data.error || 'Unknown error'}`)
+    const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2 MB
+    for (const selectedFile of selectedFiles) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        alert(`File "${selectedFile.name}" exceeds maximum allowed size limit of 2 MB.`)
+        continue
       }
-    } catch (err: any) {
-      alert(`Upload error: ${err.message}`)
-    } finally {
-      setIsUploadingFile(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      if (currentWorkspace?.id) {
+        formData.append('workspace_id', currentWorkspace.id.toString())
+      }
+      if (conversationIdRef.current) {
+        formData.append('conversation_id', conversationIdRef.current)
+      }
+
+      try {
+        const res = await fetch('/api/files/upload', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData,
+        })
+        const data = await res.json()
+        if (data.success && data.file) {
+          newUploadedFiles.push(data.file)
+        } else {
+          console.warn(`File upload failed for ${selectedFile.name}:`, data.error)
+        }
+      } catch (err: any) {
+        console.error(`Upload error for ${selectedFile.name}:`, err)
+      }
     }
+
+    if (newUploadedFiles.length > 0) {
+      setAttachedFiles(prev => [
+        ...prev.filter(f => !newUploadedFiles.some(nu => nu.id === f.id)),
+        ...newUploadedFiles
+      ])
+    }
+    setIsUploadingFile(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleRemoveFile = async (fileId: string) => {
@@ -204,23 +202,20 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     setInput('')
 
     // Ensure we have a conversation created
+    const shortTitle = promptToSend.slice(0, 32) + (promptToSend.length > 32 ? '...' : '')
+    let activeId = currentConversationId || conversationIdRef.current
     if (!currentConversationId) {
-      const newId = await createNewConversation(model, jailbreak)
-      conversationIdRef.current = newId
+      activeId = await createNewConversation(model, jailbreak, shortTitle)
+      conversationIdRef.current = activeId
+    } else if (messages.length === 0 && activeId) {
+      updateConversationTitle(activeId, shortTitle)
     }
 
     const currentFiles = [...attachedFiles]
+    setAttachedFiles([])
     const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
     setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
     setIsGenerating(true)
-
-    // Update conversation title if first message
-    if (messages.length === 0 && conversationIdRef.current) {
-      const shortTitle = promptToSend.slice(0, 32) + (promptToSend.length > 32 ? '...' : '')
-      updateConversationTitle(conversationIdRef.current, shortTitle)
-    }
-
-    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
 
     try {
       const streamToken = Math.random().toString(36).substring(2)
@@ -509,7 +504,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <div className="fixed inset-0 z-40" onClick={() => { setIsProfileMenuOpen(false); setIsHelpSubmenuOpen(false); }} />
                   <div className={`absolute left-0 right-0 bottom-full mb-2 border rounded-xl shadow-2xl z-50 p-1 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
                     <div className="relative">
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setIsHelpSubmenuOpen(!isHelpSubmenuOpen);
@@ -519,7 +514,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                         <span>Help</span>
                         <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isHelpSubmenuOpen ? 'rotate-90' : ''}`} />
                       </button>
-                      
+
                       {isHelpSubmenuOpen && (
                         <div className={`absolute left-full bottom-0 ml-1 w-48 border rounded-xl shadow-xl overflow-hidden p-1 z-50 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
                           <a onClick={() => { setIsHelpSubmenuOpen(false); setIsProfileMenuOpen(false); }} href="https://sahaj.ai/privacy-policy" target="_blank" rel="noreferrer" className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}>Privacy Policy</a>
@@ -530,8 +525,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   </div>
                 </>
               )}
-              
-              <div 
+
+              <div
                 className="flex items-center justify-between p-2 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-gray-700 transition cursor-pointer"
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               >
@@ -575,7 +570,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         </div>
       </aside>
 
-            {/* ========================================================= */}
+      {/* ========================================================= */}
       {/* MAIN CHAT AREA */}
       {/* ========================================================= */}
       <div className="flex-1 flex flex-col relative bg-[#0b0f19] overflow-hidden min-w-0">
@@ -705,274 +700,278 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         </div>
 
         {/* Chat Message List */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-        {messages.length === 0 ? (
-          <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
-            <div className="mb-4 sm:mb-5 flex items-center justify-center">
-              <ThinkingBulb state="lit" size={54} />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-              Welcome to <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
-            </h2>
-            <p className="text-gray-400 text-xs sm:text-sm max-w-md text-center mb-6 sm:mb-8 px-2">
-              Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
-              All conversations and outputs are saved securely.
-            </p>
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+          {messages.length === 0 ? (
+            <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
+              <div className="mb-4 sm:mb-5 flex items-center justify-center">
+                <ThinkingBulb state="lit" size={54} />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
+                Welcome to <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
+              </h2>
+              <p className="text-gray-400 text-xs sm:text-sm max-w-md text-center mb-6 sm:mb-8 px-2">
+                Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
+                All conversations and outputs are saved securely.
+              </p>
 
-            {/* Starter Prompts Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full">
-              {starterPrompts.map((card, i) => {
-                const Icon = card.icon
-                return (
-                  <div
-                    key={i}
-                    style={{ '--card-index': i } as React.CSSProperties}
-                    onClick={() => handleSend(card.prompt)}
-                    className="starter-card-anim group relative p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#141a27] border border-gray-800/90 hover:border-[#FACC15]/60 hover:bg-[#182030] cursor-pointer text-left select-none"
-                  >
-                    <div className="starter-card-shimmer" />
+              {/* Starter Prompts Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5 w-full">
+                {starterPrompts.map((card, i) => {
+                  const Icon = card.icon
+                  return (
+                    <div
+                      key={i}
+                      style={{ '--card-index': i } as React.CSSProperties}
+                      onClick={() => handleSend(card.prompt)}
+                      className="starter-card-anim group relative p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-[#141a27] border border-gray-800/90 hover:border-[#FACC15]/60 hover:bg-[#182030] cursor-pointer text-left select-none"
+                    >
+                      <div className="starter-card-shimmer" />
 
-                    <div className="flex items-start justify-between mb-2 sm:mb-2.5 relative z-10">
-                      <div className="flex items-center gap-2 sm:gap-2.5">
-                        <div className="starter-icon-wrap p-1.5 sm:p-2 rounded-xl bg-[#FACC15]/10 text-[#FACC15] group-hover:bg-[#FACC15] group-hover:text-[#0b0f19] group-hover:scale-110 group-hover:rotate-[-4deg] transition-all duration-300 shadow-sm">
-                          <Icon className="w-4 h-4 transition-colors" />
+                      <div className="flex items-start justify-between mb-2 sm:mb-2.5 relative z-10">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          <div className="starter-icon-wrap p-1.5 sm:p-2 rounded-xl bg-[#FACC15]/10 text-[#FACC15] group-hover:bg-[#FACC15] group-hover:text-[#0b0f19] group-hover:scale-110 group-hover:rotate-[-4deg] transition-all duration-300 shadow-sm">
+                            <Icon className="w-4 h-4 transition-colors" />
+                          </div>
+                          <span className="starter-tag text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-gray-800/80 text-gray-300 border border-gray-700/60 group-hover:border-[#FACC15]/40 group-hover:text-[#FACC15] transition-colors">
+                            {card.category}
+                          </span>
                         </div>
-                        <span className="starter-tag text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-gray-800/80 text-gray-300 border border-gray-700/60 group-hover:border-[#FACC15]/40 group-hover:text-[#FACC15] transition-colors">
-                          {card.category}
-                        </span>
+                        <div className="flex items-center text-gray-500 group-hover:text-[#FACC15] group-hover:translate-x-1 opacity-60 group-hover:opacity-100 transition-all duration-200">
+                          <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </div>
                       </div>
-                      <div className="flex items-center text-gray-500 group-hover:text-[#FACC15] group-hover:translate-x-1 opacity-60 group-hover:opacity-100 transition-all duration-200">
-                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </div>
+
+                      <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#FACC15] transition-colors mb-1 relative z-10">
+                        {card.title}
+                      </h4>
+                      <p className="text-[11px] sm:text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors relative z-10">
+                        {card.desc}
+                      </p>
                     </div>
-
-                    <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-[#FACC15] transition-colors mb-1 relative z-10">
-                      {card.title}
-                    </h4>
-                    <p className="text-[11px] sm:text-xs text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors relative z-10">
-                      {card.desc}
-                    </p>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex gap-2 sm:gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.role !== 'user' && (
-                  <div className="shrink-0 pt-0.5">
-                    <ThinkingBulb
-                      state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
-                      size={32}
-                    />
-                  </div>
-                )}
-
+          ) : (
+            <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+              {messages.map((msg, idx) => (
                 <div
-                  className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
-                    ? 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
-                    : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
-                    }`}
+                  key={idx}
+                  className={`flex gap-2 sm:gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.role === 'user' ? (
-                    <div className="space-y-2">
-                      {msg.files && msg.files.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-1.5">
-                          {msg.files.map(f => (
-                            <a
-                              key={f.id}
-                              href={`/api/files/${f.id}/view`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141a27] border border-gray-700 hover:border-[#FACC15] text-xs text-[#FACC15] hover:underline transition cursor-pointer group"
-                              title="Click to view file"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
-                              <span className="font-medium">{f.original_name}</span>
-                              <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-[#FACC15]" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                      {!msg.isAutoPrompt && (
-                        <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{msg.content}</p>
-                      )}
+                  {msg.role !== 'user' && (
+                    <div className="shrink-0 pt-0.5">
+                      <ThinkingBulb
+                        state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
+                        size={32}
+                      />
                     </div>
-                  ) : (
-                    <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
-                      {msg.content ? (
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            a: ({ node, href, children, ...props }) => (
+                  )}
+
+                  <div
+                    className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
+                      ? 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
+                      : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
+                      }`}
+                  >
+                    {msg.role === 'user' ? (
+                      <div className="space-y-2">
+                        {msg.files && msg.files.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {msg.files.map(f => (
                               <a
-                                href={href}
+                                key={f.id}
+                                href={`/api/files/${f.id}/view`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
-                                {...props}
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#141a27] border border-gray-700 hover:border-[#FACC15] text-xs text-[#FACC15] hover:underline transition cursor-pointer group"
+                                title="Click to view file"
                               >
-                                <span>{children}</span>
-                                <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
+                                <span className="font-medium">{f.original_name}</span>
+                                <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-[#FACC15]" />
                               </a>
-                            ),
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
-                      ) : (
-                        <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
-                          <span></span><span></span><span></span>
-                        </span>
-                      )}
-                      {msg.content && (
-                        <div className="flex justify-end pt-2">
-                          <button
-                            onClick={() => handleCopyCode(msg.content, idx)}
-                            className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-[#FACC15] transition cursor-pointer"
+                            ))}
+                          </div>
+                        )}
+                        {!msg.isAutoPrompt && (
+                          <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{msg.content}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
+                        {msg.content ? (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node, href, children, ...props }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                  {...props}
+                                >
+                                  <span>{children}</span>
+                                  <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                </a>
+                              ),
+                            }}
                           >
-                            {copiedIndex === idx ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                <span className="text-emerald-400">Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5" />
-                                <span>Copy</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      )}
+                            {msg.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
+                            <span></span><span></span><span></span>
+                          </span>
+                        )}
+                        {msg.content && (
+                          <div className="flex justify-end pt-2">
+                            <button
+                              onClick={() => handleCopyCode(msg.content, idx)}
+                              className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-[#FACC15] transition cursor-pointer"
+                            >
+                              {copiedIndex === idx ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-emerald-400">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {msg.role === 'user' && (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-400/40 uppercase">
+                      {user?.username ? user.username[0] : 'U'}
                     </div>
                   )}
                 </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
 
-                {msg.role === 'user' && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-400/40 uppercase">
-                    {user?.username ? user.username[0] : 'U'}
+        {/* Input Bar Area */}
+        <div className="p-2 sm:p-4 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19] to-transparent shrink-0">
+          <div className="max-w-3xl mx-auto">
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
+              className="hidden"
+            />
+
+            {/* Attached Files Badges */}
+            {(attachedFiles.length > 0 || isUploadingFile) && (
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                {attachedFiles.map(file => (
+                  <div
+                    key={file.id}
+                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-gray-700 text-[11px] sm:text-xs text-gray-200 shadow-sm"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
+                    <span className="max-w-[120px] sm:max-w-[150px] truncate font-medium">{file.original_name}</span>
+                    <span className="text-[9px] sm:text-[10px] text-emerald-400 font-mono">✓ Ready</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(file.id)}
+                      className="ml-0.5 sm:ml-1 p-0.5 hover:bg-gray-700 rounded-md text-gray-400 hover:text-red-400 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {isUploadingFile && (
+                  <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-yellow-500/50 text-[11px] sm:text-xs text-[#FACC15] animate-pulse">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Processing...</span>
                   </div>
                 )}
               </div>
-            ))}
-            <div ref={bottomRef} />
-          </div>
-        )}
-      </div>
+            )}
 
-      {/* Input Bar Area */}
-      <div className="p-2 sm:p-4 bg-gradient-to-t from-[#0b0f19] via-[#0b0f19] to-transparent shrink-0">
-        <div className="max-w-3xl mx-auto">
+            <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
 
-          {/* Hidden File Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
-            className="hidden"
-          />
-
-          {/* Attached Files Badges */}
-          {(attachedFiles.length > 0 || isUploadingFile) && (
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
-              {attachedFiles.map(file => (
-                <div
-                  key={file.id}
-                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-gray-700 text-[11px] sm:text-xs text-gray-200 shadow-sm"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#FACC15]" />
-                  <span className="max-w-[120px] sm:max-w-[150px] truncate font-medium">{file.original_name}</span>
-                  <span className="text-[9px] sm:text-[10px] text-emerald-400 font-mono">✓ Ready</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveFile(file.id)}
-                    className="ml-0.5 sm:ml-1 p-0.5 hover:bg-gray-700 rounded-md text-gray-400 hover:text-red-400 transition"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {isUploadingFile && (
-                <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#1c2436] border border-yellow-500/50 text-[11px] sm:text-xs text-[#FACC15] animate-pulse">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Processing...</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
-
-            {/* File Attachment Button */}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onRequireAuth?.()
-                  return
-                }
-                fileInputRef.current?.click()
-              }}
-              disabled={isUploadingFile || isGenerating}
-              className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
-              title="Attach Document/File for context"
-            >
-              <Paperclip className="w-4 h-4" />
-            </button>
-
-            <textarea
-              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-[16px] sm:py-[18px] outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500 leading-tight"
-              placeholder="Start Interacting..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
+              {/* File Attachment Button */}
+              <button
+                type="button"
+                onClick={() => {
                   if (!isAuthenticated) {
                     onRequireAuth?.()
                     return
                   }
-                  if (input.trim() || attachedFiles.length > 0) {
-                    handleSend()
+                  fileInputRef.current?.click()
+                }}
+                disabled={isUploadingFile || isGenerating}
+                className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
+                title="Attach Document/File for context"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+
+              <textarea
+                className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-[16px] sm:py-[18px] outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500 leading-tight"
+                placeholder="Start Interacting..."
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (!isAuthenticated) {
+                      onRequireAuth?.()
+                      return
+                    }
+                    if (input.trim() || attachedFiles.length > 0) {
+                      handleSend()
+                    }
                   }
-                }
-              }}
-              disabled={isGenerating}
-            />
+                }}
+                disabled={isGenerating}
+              />
 
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onRequireAuth?.()
-                  return
-                }
-                handleSend()
-              }}
-              disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
-              className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
-            >
-              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onRequireAuth?.()
+                    return
+                  }
+                  handleSend()
+                }}
+                disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
+                className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
+              >
+                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
 
-          <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
-            <span className="hidden sm:inline">Shift + Enter for new line • Attach files with 📎</span>
-            <span className="sm:hidden">Tap 📎 to attach files • Shift+Enter for new line</span>
+            <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
+              <span className="hidden sm:inline-flex items-center gap-1">
+                Shift + Enter for new line • Attach files with <Paperclip className="w-3 h-3 text-gray-400 inline" /> (Max 2 MB)
+              </span>
+              <span className="sm:hidden flex items-center gap-1">
+                Tap <Paperclip className="w-3 h-3 text-gray-400 inline" /> to attach files (Max 2 MB) • Shift+Enter for new line
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-      {/* Workspace Creation Modal */ }
-  <WorkspaceModal isOpen={isCreateWsOpen} onClose={() => setIsCreateWsOpen(false)} />
+      {/* Workspace Creation Modal */}
+      <WorkspaceModal isOpen={isCreateWsOpen} onClose={() => setIsCreateWsOpen(false)} />
     </div >
   )
 }

@@ -68,3 +68,19 @@ export interface UploadedFile {
   error_message?: string
 }
 
+export interface LlmProvider {
+  id: number
+  name: string
+  provider_type: string
+  model_name: string
+  endpoint: string
+  api_key: string
+  timeout: number
+  is_active: boolean
+  created_at?: string
+  updated_at?: string
+  test_status?: 'idle' | 'testing' | 'success' | 'failed'
+  test_message?: string
+}
+
+
