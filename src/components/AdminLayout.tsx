@@ -71,7 +71,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
 
   const fetchLlmProviders = async () => {
     try {
-      const res = await fetch('/api/admin/llm-providers', {
+      const res = await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDERS, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (res.ok) {
@@ -88,7 +88,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   const handleSaveProvider = async (data: Partial<LlmProvider>) => {
     try {
       const isEdit = !!data.id
-      const url = isEdit ? `/api/admin/llm-providers/${data.id}` : '/api/admin/llm-providers'
+      const url = isEdit ? API_ENDPOINTS.ADMIN.LLM_PROVIDER_BY_ID(data.id!) : API_ENDPOINTS.ADMIN.LLM_PROVIDERS
       const method = isEdit ? 'PUT' : 'POST'
       const res = await fetch(url, {
         method,
@@ -113,7 +113,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   const handleDeleteProvider = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this LLM provider?')) return
     try {
-      const res = await fetch(`/api/admin/llm-providers/${id}`, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_BY_ID(id), {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
@@ -131,7 +131,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
     const newActive = !currentActive
     setProvidersList(prev => prev.map(p => (p.id === id ? { ...p, is_active: newActive } : p)))
     try {
-      await fetch(`/api/admin/llm-providers/${id}/toggle`, {
+      await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_TOGGLE(id), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   const handleTestProvider = async (id: number) => {
     setProvidersList(prev => prev.map(p => (p.id === id ? { ...p, test_status: 'testing' } : p)))
     try {
-      const res = await fetch(`/api/admin/llm-providers/${id}/test`, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_TEST(id), {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })

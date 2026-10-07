@@ -118,7 +118,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       }
 
       try {
-        const res = await fetch('/api/files/upload', {
+        const res = await fetch(API_ENDPOINTS.FILES.UPLOAD, {
           method: 'POST',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formData,
@@ -149,7 +149,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     const token = localStorage.getItem('sahaj_token')
     if (token) {
       try {
-        await fetch(`/api/files/${fileId}`, {
+        await fetch(API_ENDPOINTS.FILES.BY_ID(fileId), {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         })
