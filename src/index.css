@@ -100,6 +100,69 @@ body {
   animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Starter Prompt Card Animations */
+@keyframes promptCardIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+.starter-card-anim {
+  animation: promptCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 80ms);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.28s ease,
+              background-color 0.28s ease;
+}
+
+.starter-card-anim:hover {
+  transform: translateY(-4px) scale(1.008);
+  box-shadow: 0 14px 30px -8px rgba(250, 204, 21, 0.22), 0 0 0 1px rgba(250, 204, 21, 0.35);
+}
+
+.starter-card-anim:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.starter-card-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(250, 204, 21, 0.08),
+    rgba(255, 255, 255, 0.14),
+    rgba(250, 204, 21, 0.08),
+    transparent
+  );
+  transform: translateX(-150%) skewX(-20deg);
+  pointer-events: none;
+}
+
+.starter-card-anim:hover .starter-card-shimmer {
+  animation: shimmerSweep 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Markdown prose overrides for Chat messages (Dark Mode Default) */
 .prose {
   color: #f1f5f9;
@@ -691,31 +754,62 @@ body {
 }
 
 /* Starter Prompt Cards */
+[data-theme="light"] .starter-card-anim,
 [data-theme="light"] .grid .bg-\[\#141a27\] {
   background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 
+[data-theme="light"] .starter-card-anim:hover,
 [data-theme="light"] .grid .bg-\[\#141a27\]:hover {
   background-color: #ffffff !important;
   border-color: #eab308 !important;
-  box-shadow: 0 10px 24px -4px rgba(234, 179, 8, 0.25) !important;
+  box-shadow: 0 14px 28px -6px rgba(234, 179, 8, 0.22), 0 0 0 1px rgba(234, 179, 8, 0.3) !important;
 }
 
+[data-theme="light"] .starter-card-anim h4,
 [data-theme="light"] .grid .bg-\[\#141a27\] h4,
 [data-theme="light"] .grid .bg-\[\#141a27\] .text-white {
   color: #0f172a !important;
   font-weight: 600 !important;
 }
 
+[data-theme="light"] .starter-card-anim:hover h4,
 [data-theme="light"] .grid .bg-\[\#141a27\]:hover h4 {
   color: #854d0e !important;
 }
 
+[data-theme="light"] .starter-card-anim p,
 [data-theme="light"] .grid .bg-\[\#141a27\] p,
 [data-theme="light"] .grid .bg-\[\#141a27\] .text-gray-400 {
   color: #475569 !important;
+}
+
+[data-theme="light"] .starter-card-anim:hover p {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .starter-card-anim .starter-tag {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .starter-card-anim:hover .starter-tag {
+  color: #a16207 !important;
+  border-color: #fde047 !important;
+  background-color: #fefce8 !important;
+}
+
+[data-theme="light"] .starter-card-anim .starter-icon-wrap {
+  background-color: #fefce8 !important;
+  color: #ca8a04 !important;
+}
+
+[data-theme="light"] .starter-card-anim:hover .starter-icon-wrap {
+  background-color: #facc15 !important;
+  color: #0f172a !important;
 }
 
 [data-theme="light"] .grid .bg-\[\#141a27\] svg {
@@ -1058,6 +1152,30 @@ body {
   background-color: #f1f5f9 !important;
   border-color: #94a3b8 !important;
   color: #0f172a !important;
+}
+
+/* Mobile Responsive Utilities */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (max-width: 768px) {
+  .prose pre {
+    max-width: calc(100vw - 4.5rem);
+    font-size: 0.8rem;
+    padding: 0.75rem 0.9rem;
+  }
+}
+
+/* Light Mode Aside Mobile Drawer */
+[data-theme="light"] aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08) !important;
 }
 
 

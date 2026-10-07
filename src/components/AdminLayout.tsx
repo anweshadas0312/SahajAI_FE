@@ -167,37 +167,38 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
       {/* ========================================================= */}
       {/* ADMIN HEADER */}
       {/* ========================================================= */}
-      <header className="h-16 px-6 bg-[#111723] border-b border-gray-800 flex items-center justify-between shrink-0 sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FACC15] flex items-center justify-center text-gray-950 font-bold shadow-md shadow-yellow-500/20">
-            <Shield className="w-5 h-5 fill-current" />
+      <header className="min-h-16 px-3 sm:px-6 py-2.5 sm:py-0 bg-[#111723] border-b border-gray-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0 sticky top-0 z-30">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FACC15] flex items-center justify-center text-gray-950 font-bold shadow-md shadow-yellow-500/20 shrink-0">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-white tracking-tight">sahajAI Admin</h1>
-              <span className="px-2 py-0.5 rounded-full bg-[#FACC15]/15 border border-[#FACC15]/30 text-[#FACC15] text-[10px] font-mono font-bold uppercase">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">sahajAI Admin</h1>
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#FACC15]/15 border border-[#FACC15]/30 text-[#FACC15] text-[9px] sm:text-[10px] font-mono font-bold uppercase">
                 Control Center
               </span>
             </div>
-            <p className="text-xs text-gray-400">Multi-tenant Workspace & User Oversight</p>
+            <p className="text-[11px] sm:text-xs text-gray-400 hidden xs:block">Multi-tenant Workspace & User Oversight</p>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Switch to Chat Studio Button */}
           <button
             onClick={onSwitchToChat}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-750 border border-gray-700 text-white text-xs font-semibold transition cursor-pointer hover:border-[#FACC15]"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gray-800 hover:bg-gray-750 border border-gray-700 text-white text-xs font-semibold transition cursor-pointer hover:border-[#FACC15]"
           >
-            <ArrowLeft className="w-4 h-4 text-[#FACC15]" />
-            <span>AI Chat Studio</span>
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FACC15]" />
+            <span className="hidden sm:inline">AI Chat Studio</span>
+            <span className="sm:hidden">Chat</span>
           </button>
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="theme-toggle-btn p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-[#FACC15] transition cursor-pointer"
+            className="theme-toggle-btn p-1.5 sm:p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-[#FACC15] transition cursor-pointer"
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
             {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-blue-500" />}
@@ -207,21 +208,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           <button
             onClick={fetchAdminData}
             disabled={isLoading}
-            className="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition cursor-pointer disabled:opacity-50"
+            className="p-1.5 sm:p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition cursor-pointer disabled:opacity-50"
             title="Refresh Metrics"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#FACC15]' : ''}`} />
           </button>
 
           {/* Admin Profile & Logout */}
-          <div className="flex items-center gap-2 pl-3 border-l border-gray-800">
+          <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-gray-800">
             <div className="text-right">
-              <p className="text-xs font-semibold text-white">{user?.username || 'Admin'}</p>
-              <p className="text-[10px] text-gray-400">{user?.email}</p>
+              <p className="text-xs font-semibold text-white truncate max-w-[80px] sm:max-w-none">{user?.username || 'Admin'}</p>
+              <p className="text-[10px] text-gray-400 hidden sm:block">{user?.email}</p>
             </div>
             <button
               onClick={logout}
-              className="p-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -247,11 +248,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
       {/* ========================================================= */}
       {/* MAIN ADMIN DASHBOARD BODY */}
       {/* ========================================================= */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
         {/* STATS OVERVIEW CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Card 1: Users */}
-          <div className="p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Users</span>
               <div className="w-9 h-9 rounded-xl bg-[#FACC15]/10 text-[#FACC15] flex items-center justify-center">
@@ -259,13 +260,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-extrabold text-white tracking-tight">{stats.total_users}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_users}</span>
               <span className="text-xs text-gray-500 ml-2">Registered Accounts</span>
             </div>
           </div>
 
           {/* Card 2: Workspaces */}
-          <div className="p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Workspaces</span>
               <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
@@ -273,13 +274,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-extrabold text-white tracking-tight">{stats.total_workspaces}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_workspaces}</span>
               <span className="text-xs text-gray-500 ml-2">Isolated Environments</span>
             </div>
           </div>
 
           {/* Card 3: Conversations */}
-          <div className="p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Conversations</span>
               <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
@@ -287,13 +288,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-3xl font-extrabold text-white tracking-tight">{stats.total_conversations}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_conversations}</span>
               <span className="text-xs text-gray-500 ml-2">Active Chat Sessions</span>
             </div>
           </div>
 
           {/* Card 4: Database & Messages */}
-          <div className="p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Database Status</span>
               <div className={`w-9 h-9 rounded-xl ${dbConnected ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'} flex items-center justify-center`}>
@@ -302,7 +303,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             </div>
             <div className="mt-3 flex items-center justify-between">
               <div>
-                <span className="text-3xl font-extrabold text-white tracking-tight">{stats.total_messages}</span>
+                <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_messages}</span>
                 <span className="text-xs text-gray-500 ml-2">Messages</span>
               </div>
               <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold ${dbConnected ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}`}>
@@ -313,10 +314,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         </div>
 
         {/* TAB CONTROLS */}
-        <div className="flex items-center gap-2 border-b border-gray-800 pb-3">
+        <div className="flex items-center gap-2 border-b border-gray-800 pb-3 overflow-x-auto whitespace-nowrap scrollbar-none">
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'users'
                 ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -328,7 +329,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
 
           <button
             onClick={() => setActiveTab('workspaces')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'workspaces'
                 ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -340,7 +341,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'settings'
                 ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
