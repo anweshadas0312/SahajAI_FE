@@ -36,6 +36,7 @@ import { WorkspaceModal } from './WorkspaceModal'
 import type { UploadedFile } from '../types'
 import { API_ENDPOINTS } from '../apiConfig'
 import { ThinkingBulb } from './ThinkingBulb'
+import { ChartRenderer } from './ChartRenderer'
 
 interface UserLayoutProps {
   onSwitchToAdmin?: () => void
@@ -755,6 +756,40 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                                   <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
                                 </a>
                               ),
+                              code: ({ node, inline, className, children, ...props }: any) => {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const lang = match ? match[1].toLowerCase() : '';
+                                const rawContent = String(children).replace(/\n$/, '').trim();
+
+                                if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
+                                  try {
+                                    const parsed = JSON.parse(rawContent);
+                                    if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
+                                      if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
+                                        parsed.type = lang;
+                                      }
+                                      if (Array.isArray(parsed.data) && parsed.data.length > 0) {
+                                        return <ChartRenderer dataPayload={parsed} />;
+                                      }
+                                    }
+                                  } catch (e) {
+                                    // Not valid JSON chart data, fallback to normal code block
+                                  }
+                                }
+
+                                if (inline) {
+                                  return (
+                                    <code className="bg-[#141a27] text-[#FACC15] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                }
+                                return (
+                                  <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
+                                    <code>{children}</code>
+                                  </pre>
+                                );
+                              },
                             }}
                           >
                             {msg.content}
@@ -809,6 +844,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
+              multiple
               accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.xls,.py,.js,.ts,.jsx,.tsx,.json,.html,.css,.sql,.xml"
               className="hidden"
             />
@@ -899,10 +935,10 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
             <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
               <span className="hidden sm:inline-flex items-center gap-1">
-                Shift + Enter for new line • Attach files with <Paperclip className="w-3 h-3 text-gray-400 inline" /> (Max 2 MB)
+                Shift + Enter for new line • Attach multiple files with <Paperclip className="w-3 h-3 text-gray-400 inline" /> (Max 2 MB each)
               </span>
               <span className="sm:hidden flex items-center gap-1">
-                Tap <Paperclip className="w-3 h-3 text-gray-400 inline" /> to attach files (Max 2 MB) • Shift+Enter for new line
+                Tap <Paperclip className="w-3 h-3 text-gray-400 inline" /> to attach multiple files (Max 2 MB each) • Shift+Enter for new line
               </span>
             </div>
           </div>
