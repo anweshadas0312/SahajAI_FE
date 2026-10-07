@@ -842,60 +842,60 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               </div>
             )}
 
-            <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
+          <div className="relative flex items-center bg-[#141a27] rounded-xl sm:rounded-2xl shadow-xl border border-gray-700/80 focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40 transition duration-200">
 
-              {/* File Attachment Button */}
-              <button
-                type="button"
-                onClick={() => {
+            {/* File Attachment Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!isAuthenticated) {
+                  onRequireAuth?.()
+                  return
+                }
+                fileInputRef.current?.click()
+              }}
+              disabled={isUploadingFile || isGenerating}
+              className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
+              title="Attach Document/File for context"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+
+            <textarea
+              className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-3.5 sm:py-4 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
+              placeholder="Start Interacting..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
                   if (!isAuthenticated) {
                     onRequireAuth?.()
                     return
                   }
-                  fileInputRef.current?.click()
-                }}
-                disabled={isUploadingFile || isGenerating}
-                className="pl-2.5 sm:pl-3.5 pr-1 text-gray-400 hover:text-[#FACC15] transition cursor-pointer disabled:opacity-30 shrink-0"
-                title="Attach Document/File for context"
-              >
-                <Paperclip className="w-4 h-4" />
-              </button>
-
-              <textarea
-                className="w-full bg-transparent text-white pl-1.5 sm:pl-2 pr-11 sm:pr-14 py-3.5 sm:py-4 outline-none resize-none h-12 sm:h-14 max-h-36 text-xs sm:text-sm placeholder-gray-500"
-                placeholder="Start Interacting..."
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    if (!isAuthenticated) {
-                      onRequireAuth?.()
-                      return
-                    }
-                    if (input.trim() || attachedFiles.length > 0) {
-                      handleSend()
-                    }
+                  if (input.trim() || attachedFiles.length > 0) {
+                    handleSend()
                   }
-                }}
-                disabled={isGenerating}
-              />
+                }
+              }}
+              disabled={isGenerating}
+            />
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    onRequireAuth?.()
-                    return
-                  }
-                  handleSend()
-                }}
-                disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
-                className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
-              >
-                <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!isAuthenticated) {
+                  onRequireAuth?.()
+                  return
+                }
+                handleSend()
+              }}
+              disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
+              className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
+            >
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+          </div>
 
             <div className="flex items-center justify-between mt-1.5 sm:mt-2 px-1 sm:px-2 text-[10px] sm:text-[11px] text-gray-500">
               <span className="hidden sm:inline-flex items-center gap-1">
