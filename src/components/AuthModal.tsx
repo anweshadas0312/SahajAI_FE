@@ -78,9 +78,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       onClick={e => {
         if (e.target === e.currentTarget && onClose) onClose()
       }}
-      className="auth-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all"
+      className="auth-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto transition-all"
     >
-      <div className="auth-modal-card relative w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl p-7 overflow-hidden transition-colors">
+      <div className="auth-modal-card relative w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl p-6 sm:p-7 overflow-hidden transition-colors my-auto">
         {/* Theme Switcher Button */}
         <button
           type="button"
