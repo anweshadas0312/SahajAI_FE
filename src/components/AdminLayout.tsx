@@ -185,13 +185,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Switch to Chat Studio Button */}
+          {/* Switch to Chat Button */}
           <button
             onClick={onSwitchToChat}
             className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gray-800 hover:bg-gray-750 border border-gray-700 text-white text-xs font-semibold transition cursor-pointer hover:border-[#FACC15]"
           >
             <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FACC15]" />
-            <span className="hidden sm:inline">AI Chat Studio</span>
+            <span className="hidden sm:inline">sahajAI Chat</span>
             <span className="sm:hidden">Chat</span>
           </button>
 

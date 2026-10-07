@@ -336,8 +336,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <ThinkingBulb state={isGenerating ? 'thinking' : 'lit'} size={36} />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className="text-black">AI</span></h1>
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-[#FACC15]">Studio</span>
+                  <h1 className="text-base font-bold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className="text-white">AI</span></h1>
                 </div>
               </div>
 
