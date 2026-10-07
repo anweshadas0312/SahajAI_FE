@@ -310,7 +310,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <ThinkingBulb state={isGenerating ? 'thinking' : 'lit'} size={36} />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold text-white tracking-tight leading-none">sahajAI</h1>
+                  <h1 className="text-base font-bold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className="text-black">AI</span></h1>
                   <span className="text-[10px] uppercase tracking-wider font-semibold text-[#FACC15]">Studio</span>
                 </div>
               </div>
@@ -498,14 +498,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 <LogIn className="w-4 h-4" />
                 <span>Sign In / Register</span>
               </button>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                className="theme-toggle-btn p-2.5 rounded-xl border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer shrink-0"
-              >
-                {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-amber-500" />}
-              </button>
+
             </div>
           )}
         </div>
@@ -516,8 +509,12 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       {/* ========================================================= */}
       <div className="flex-1 flex flex-col relative bg-[#0b0f19] overflow-hidden">
         {/* Top Control Bar */}
-        <div className="h-14 px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
-          <div className="flex items-center gap-3">
+        <div className="h-14 px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 relative">
+          {/* Empty left spacer to keep right controls aligned */}
+          <div className="flex-1"></div>
+
+          {/* Centered Workspace Info */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
             <ThinkingBulb
               state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
               size={32}
@@ -527,7 +524,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 className="w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
               />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
+              <span className="text-xs font-bold text-white lowercase tracking-wider">
                 {currentWorkspace?.name}
               </span>
               {conversations.find(c => c.id === currentConversationId)?.title && (
@@ -557,6 +554,16 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               </select>
             </div>
             */}
+
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="theme-toggle-btn p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer flex items-center justify-center shrink-0"
+            >
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
+            </button>
 
             {/* Jailbreak Selector */}
             <select
@@ -591,8 +598,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               <div className="mb-5 flex items-center justify-center">
                 <ThinkingBulb state="lit" size={64} />
               </div>
-              <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-                Welcome to <span className="text-[#FACC15]">sahajAI</span>
+              <h2 className="text-3xl font-extrabold tracking-tight mb-2 text-center">
+                Welcome to <span className="text-[#FACC15]">sahaj</span><span className="text-black">AI</span>
               </h2>
               <p className="text-gray-400 text-sm max-w-md text-center mb-8">
                 Your dedicated workspace: <strong className="text-gray-200">{currentWorkspace?.name}</strong>.
