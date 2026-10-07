@@ -43,7 +43,7 @@ interface UserLayoutProps {
 }
 
 export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequireAuth }) => {
-  const { user, logout, isAdmin, isAuthenticated } = useAuth()
+  const { user, token: authToken, logout, isAdmin, isAuthenticated } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const {
     workspaces,
@@ -219,18 +219,23 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
 
     try {
-      const token = Math.random().toString(36).substring(2)
+      const streamToken = Math.random().toString(36).substring(2)
       const response = await fetch(API_ENDPOINTS.CONVERSATION.STREAM, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: JSON.stringify({
           conversation_id: conversationIdRef.current,
           workspace_id: currentWorkspace?.id,
+          user_id: user?.id,
           action: '_ask',
           model: model,
           jailbreak: jailbreak,
           meta: {
-            id: token,
+            id: streamToken,
             file_ids: attachedFiles.map(f => f.id),
             content: {
               conversation: newMessages,
@@ -545,106 +550,85 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       {/* ========================================================= */}
       <div className="flex-1 flex flex-col relative bg-[#0b0f19] overflow-hidden min-w-0">
         {/* Top Control Bar */}
-        <div className="h-14 px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 relative">
-          {/* Empty left spacer to keep right controls aligned */}
-          <div className="flex-1"></div>
+        <div className="h-14 px-3 sm:px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Hamburger Button for Mobile */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="md:hidden p-2 -ml-1 text-gray-300 hover:text-[#FACC15] hover:bg-gray-800/70 rounded-xl transition cursor-pointer shrink-0"
+              aria-label="Open sidebar"
+              title="Open Navigation"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-          {/* Centered Workspace Info */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
-            <div className="h-14 px-3 sm:px-6 border-b border-gray-800/80 bg-[#101521]/70 backdrop-blur-md flex items-center justify-between shrink-0 z-10 gap-2">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                {/* Hamburger Button for Mobile */}
-                <button
-                  type="button"
-                  onClick={() => setIsMobileSidebarOpen(true)}
-                  className="md:hidden p-2 -ml-1 text-gray-300 hover:text-[#FACC15] hover:bg-gray-800/70 rounded-xl transition cursor-pointer shrink-0"
-                  aria-label="Open sidebar"
-                  title="Open Navigation"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-
-                <ThinkingBulb
-                  state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
-                  size={28}
-                />
-                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
-                  />
-                  <span className="text-xs font-bold text-white lowercase tracking-wider">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider truncate max-w-[100px] sm:max-w-[160px]">
-                      {currentWorkspace?.name}
-                    </span>
-                    {conversations.find(c => c.id === currentConversationId)?.title && (
-                      <>
-                        <span className="text-xs text-gray-600 hidden sm:inline">/</span>
-                        <span className="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-xs hidden sm:inline">
-                          {conversations.find(c => c.id === currentConversationId)?.title}
-                        </span>
-                      </>
-                    )}
-                </div>
-              </div>
-
-              {/* Model & Config Selectors */}
-              <div className="flex items-center gap-2 text-xs">
-                {/* Model Selector (Commented out - hardcoded to Qwen 2.5 Coder. Uncomment below to restore UI dropdown) */}
-                {/*
-            <div className="flex items-center gap-1 bg-[#182030] border border-gray-700/80 rounded-lg px-2.5 py-1 text-gray-200">
-              <Cpu className="w-3.5 h-3.5 text-[#FACC15]" />
-              <select
-                value={model}
-                onChange={e => setModel(e.target.value)}
-                className="bg-transparent text-xs text-white outline-none cursor-pointer"
-              >
-                <option value="qwen2.5-coder:1.5b" className="bg-[#182030]">Qwen 2.5 Coder</option>
-                <option value="mistral:latest" className="bg-[#182030]">Mistral Latest</option>
-              </select>
+            <ThinkingBulb
+              state={isGenerating ? 'thinking' : messages.length > 0 ? 'lit' : 'off'}
+              size={28}
+            />
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
+              />
+              <span className="text-xs font-bold text-white uppercase tracking-wider truncate max-w-[100px] sm:max-w-[160px]">
+                {currentWorkspace?.name}
+              </span>
+              {conversations.find(c => c.id === currentConversationId)?.title && (
+                <>
+                  <span className="text-xs text-gray-600 hidden sm:inline">/</span>
+                  <span className="text-xs text-gray-400 font-mono truncate max-w-[100px] md:max-w-xs hidden sm:inline">
+                    {conversations.find(c => c.id === currentConversationId)?.title}
+                  </span>
+                </>
+              )}
             </div>
-            */}
+          </div>
 
-                {/* Theme Toggle */}
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                  className="theme-toggle-btn p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer flex items-center justify-center shrink-0"
-                >
-                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
-                </button>
+          {/* Model & Config Selectors */}
+          <div className="flex items-center gap-2 text-xs">
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="theme-toggle-btn p-1.5 rounded-lg border border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer flex items-center justify-center shrink-0"
+            >
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
+            </button>
 
-                <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
-                  {/* Jailbreak Selector */}
-                  <select
-                    value={jailbreak}
-                    onChange={e => setJailbreak(e.target.value)}
-                    className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
-                  >
-                    <option value="default" className="bg-[#182030]">Standard</option>
-                    <option value="gpt-dan-11.0" className="bg-[#182030]">DAN Mode</option>
-                    <option value="gpt-evil" className="bg-[#182030]">EvilBOT</option>
-                  </select>
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
+              {/* Jailbreak Selector */}
+              <select
+                value={jailbreak}
+                onChange={e => setJailbreak(e.target.value)}
+                className="bg-[#182030] border border-gray-700/80 rounded-lg px-2 py-1 text-gray-200 text-[11px] sm:text-xs outline-none cursor-pointer max-w-[105px] sm:max-w-none"
+              >
+                <option value="default" className="bg-[#182030]">Standard</option>
+                <option value="gpt-dan-11.0" className="bg-[#182030]">DAN Mode</option>
+                <option value="gpt-evil" className="bg-[#182030]">EvilBOT</option>
+              </select>
 
-                  {/* Web Access Toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setWebAccess(!webAccess)}
-                    className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition cursor-pointer ${webAccess
-                      ? 'bg-[#FACC15]/15 border-[#FACC15] text-[#FACC15]'
-                      : 'bg-[#182030] border-gray-700/80 text-gray-400 hover:text-gray-200'
-                      }`}
-                    title="Toggle Web Search"
-                  >
-                    <Globe className="w-3.5 h-3.5 shrink-0" />
-                    <span className="hidden sm:inline">Web Search</span>
-                  </button>
-                </div>
-              </div>
+              {/* Web Access Toggle */}
+              <button
+                type="button"
+                onClick={() => setWebAccess(!webAccess)}
+                className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition cursor-pointer ${webAccess
+                  ? 'bg-[#FACC15]/15 border-[#FACC15] text-[#FACC15]'
+                  : 'bg-[#182030] border-gray-700/80 text-gray-400 hover:text-gray-200'
+                  }`}
+                title="Toggle Web Search"
+              >
+                <Globe className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Web Search</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
-              {/* Chat Message List */}
-              <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+        {/* Chat Message List */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
                 {messages.length === 0 ? (
                   <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4">
                     <div className="mb-4 sm:mb-5 flex items-center justify-center">
@@ -748,18 +732,33 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
                                   components={{
-                                    a: ({ node, href, children, ...props }) => (
-                                      <a
-                                        href={href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
-                                        {...props}
-                                      >
-                                        <span>{children}</span>
-                                        <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
-                                      </a>
-                                    ),
+                                    a: ({ node, href, children, ...props }) => {
+                                      let finalHref = (href || '').trim()
+                                      if (
+                                        finalHref &&
+                                        !finalHref.startsWith('http://') &&
+                                        !finalHref.startsWith('https://') &&
+                                        !finalHref.startsWith('/') &&
+                                        !finalHref.startsWith('#') &&
+                                        !finalHref.startsWith('mailto:')
+                                      ) {
+                                        finalHref = `https://${finalHref}`
+                                      }
+                                      finalHref = finalHref.replace(/ /g, '%20')
+
+                                      return (
+                                        <a
+                                          href={finalHref || '#'}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-[#FACC15] hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                          {...props}
+                                        >
+                                          <span>{children}</span>
+                                          <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                        </a>
+                                      )
+                                    },
                                   }}
                                 >
                                   {msg.content}
