@@ -8,7 +8,7 @@ interface WorkspaceModalProps {
 }
 
 const COLOR_OPTIONS = [
-  '#FACC15', // Yellow
+  '#EAB308', // Yellow
   '#F59E0B', // Amber
   '#E2E8F0', // Slate White
   '#38BDF8', // Sky Blue
@@ -20,7 +20,7 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
   const { createWorkspace } = useWorkspace()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [color, setColor] = useState('#FACC15')
+  const [color, setColor] = useState('#EAB308')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
@@ -34,7 +34,7 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
     if (success) {
       setName('')
       setDescription('')
-      setColor('#FACC15')
+      setColor('#EAB308')
       onClose()
     }
   }
@@ -52,7 +52,7 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/30 flex items-center justify-center text-[#FACC15]">
+          <div className="w-10 h-10 rounded-xl bg-[#EAB308]/10 border border-[#EAB308]/30 flex items-center justify-center text-[#EAB308]">
             <FolderPlus className="w-5 h-5" />
           </div>
           <div>
@@ -70,7 +70,7 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
               placeholder="e.g. Research & Analysis, Python Backend"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-[#0d1117] border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+              className="w-full px-3.5 py-2.5 bg-[#0d1117] border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition"
             />
           </div>
 
@@ -81,7 +81,7 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
               placeholder="Brief summary of what you explore in this workspace..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3.5 py-2 bg-[#0d1117] border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition resize-none"
+              className="w-full px-3.5 py-2 bg-[#0d1117] border border-gray-700 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition resize-none"
             />
           </div>
 
@@ -113,7 +113,7 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({ isOpen, onClose 
             <button
               type="submit"
               disabled={isSubmitting || !name.trim()}
-              className="px-5 py-2.5 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-semibold text-xs transition shadow-lg shadow-yellow-500/20 disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-semibold text-xs transition shadow-lg shadow-yellow-500/20 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? 'Creating...' : 'Create Workspace'}
             </button>

@@ -429,7 +429,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <ThinkingBulb state={isGenerating ? 'thinking' : 'lit'} size={36} />
                 </div>
                 <div>
-                  <h1 className="text-base font-extrabold tracking-tight leading-none"><span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span></h1>
+                  <h1 className="text-base font-extrabold tracking-tight leading-none"><span className="text-[#EAB308]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span></h1>
                 </div>
               </div>
 
@@ -457,7 +457,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span
                     className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
+                    style={{ backgroundColor: currentWorkspace?.icon_color || '#EAB308' }}
                   />
                   <div className="truncate">
                     <p className={`text-xs font-semibold truncate ${isLight ? 'text-gray-950' : 'text-white'}`}>{currentWorkspace?.name || 'Workspace'}</p>
@@ -488,7 +488,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                         setIsMobileSidebarOpen(false)
                       }}
                       className={`flex items-center justify-between p-2 rounded-lg text-xs cursor-pointer transition ${currentWorkspace?.id === ws.id
-                        ? 'bg-[#FACC15]/15 text-amber-700 font-bold dark:text-[#FACC15]'
+                        ? 'bg-[#EAB308]/15 text-amber-700 font-bold dark:text-[#EAB308]'
                         : isLight
                           ? 'text-gray-700 hover:bg-gray-100'
                           : 'text-gray-300 hover:bg-gray-800'
@@ -523,7 +523,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                         }
                         setIsCreateWsOpen(true)
                       }}
-                      className="w-full flex items-center gap-2 p-2 rounded-lg text-xs text-amber-600 dark:text-[#FACC15] hover:bg-amber-50 dark:hover:bg-[#FACC15]/10 font-medium transition cursor-pointer"
+                      className="w-full flex items-center gap-2 p-2 rounded-lg text-xs text-amber-600 dark:text-[#EAB308] hover:bg-amber-50 dark:hover:bg-[#EAB308]/10 font-medium transition cursor-pointer"
                     >
                       <FolderPlus className="w-3.5 h-3.5" />
                       <span>New Workspace</span>
@@ -537,7 +537,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           {/* New Chat Button */}
           <button
             onClick={handleStartNewChat}
-            className="w-full bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition duration-200 shadow-md shadow-yellow-500/15 cursor-pointer mb-4 text-xs"
+            className="w-full bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition duration-200 shadow-md shadow-yellow-500/15 cursor-pointer mb-4 text-xs"
           >
             <Plus className="w-4 h-4" />
             <span>New Chat</span>
@@ -602,7 +602,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               onClick={onSwitchToAdmin}
               className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-semibold transition cursor-pointer ${isLight
                   ? 'bg-white hover:bg-gray-100 border-amber-300 text-amber-800 shadow-sm'
-                  : 'bg-gray-800 hover:bg-gray-750 border-[#FACC15]/40 text-[#FACC15]'
+                  : 'bg-gray-800 hover:bg-gray-750 border-[#EAB308]/40 text-[#EAB308]'
                 }`}
             >
               <Shield className="w-3.5 h-3.5" />
@@ -682,7 +682,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-400/40 uppercase shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#EAB308] text-gray-950 flex items-center justify-center text-xs font-black shadow-sm border border-yellow-500/40 uppercase shrink-0">
                     {user?.username ? user.username[0] : 'U'}
                   </div>
                   <div className="truncate">
@@ -711,7 +711,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               <button
                 type="button"
                 onClick={() => onRequireAuth?.()}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-semibold text-xs flex items-center justify-center gap-2 transition duration-200 shadow-md shadow-yellow-500/20 cursor-pointer"
+                className="flex-1 py-2.5 px-3 rounded-xl bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-semibold text-xs flex items-center justify-center gap-2 transition duration-200 shadow-md shadow-yellow-500/20 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 <span>Sign In / Register</span>
@@ -735,7 +735,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className={`md:hidden p-2 -ml-1 rounded-xl transition cursor-pointer shrink-0 ${isLight ? 'text-gray-700 hover:text-amber-600 hover:bg-gray-100' : 'text-gray-300 hover:text-[#FACC15] hover:bg-gray-800/70'
+              className={`md:hidden p-2 -ml-1 rounded-xl transition cursor-pointer shrink-0 ${isLight ? 'text-gray-700 hover:text-amber-600 hover:bg-gray-100' : 'text-gray-300 hover:text-[#EAB308] hover:bg-gray-800/70'
                 }`}
               aria-label="Open sidebar"
               title="Open Navigation"
@@ -754,7 +754,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               <div className="flex items-center gap-1.5 min-w-0 truncate">
                 <span
                   className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: currentWorkspace?.icon_color || '#FACC15' }}
+                  style={{ backgroundColor: currentWorkspace?.icon_color || '#EAB308' }}
                 />
                 <span className={`text-xs font-bold uppercase tracking-wider truncate max-w-[120px] sm:max-w-[200px] ${isLight ? 'text-gray-950' : 'text-white'
                   }`}>
@@ -782,10 +782,10 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               className={`theme-toggle-btn p-1.5 rounded-lg border transition cursor-pointer flex items-center justify-center shrink-0 ${isLight
                   ? 'border-gray-200 bg-gray-50 text-gray-700 hover:text-amber-600 hover:bg-gray-100'
-                  : 'border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#FACC15] hover:bg-gray-800'
+                  : 'border-gray-700/80 bg-[#182030] text-gray-300 hover:text-[#EAB308] hover:bg-gray-800'
                 }`}
             >
-              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#FACC15]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-[#EAB308]" /> : <Moon className="w-3.5 h-3.5 text-amber-500" />}
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
@@ -828,7 +828,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                             setIsJailbreakMenuOpen(false)
                           }}
                           className={`w-full text-left px-3 py-2 rounded-lg text-[11px] sm:text-xs transition cursor-pointer ${jailbreak === opt.value
-                            ? isLight ? 'bg-amber-100 text-amber-900 font-bold' : 'bg-[#FACC15]/15 text-[#FACC15] font-medium'
+                            ? isLight ? 'bg-amber-100 text-amber-900 font-bold' : 'bg-[#EAB308]/15 text-[#EAB308] font-medium'
                             : isLight ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                             }`}
                         >
@@ -853,7 +853,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg border text-[11px] sm:text-xs font-medium transition cursor-pointer ${webAccess
                   ? isLight
                     ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold'
-                    : 'bg-[#FACC15]/15 border-[#FACC15] text-[#FACC15]'
+                    : 'bg-[#EAB308]/15 border-[#EAB308] text-[#EAB308]'
                   : isLight
                     ? 'bg-gray-50 border-gray-200 text-gray-600 hover:text-gray-900'
                     : 'bg-[#182030] border-gray-700/80 text-gray-400 hover:text-gray-200'
@@ -878,7 +878,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 <ThinkingBulb state="lit" size={46} />
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2 text-center">
-                Welcome to <span className="text-[#FACC15]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
+                Welcome to <span className="text-[#EAB308]">sahaj</span><span className={theme === 'dark' ? "text-white" : "text-black"}>AI</span>
               </h2>
               <p className={`text-xs sm:text-sm max-w-md text-center mb-3.5 sm:mb-5 px-2 ${isLight ? 'text-gray-600' : 'text-gray-400'
                 }`}>
@@ -897,7 +897,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                       onClick={() => handleSend(card.prompt)}
                       className={`starter-card-anim group relative p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border cursor-pointer text-left select-none transition-all duration-200 ${isLight
                           ? 'bg-white border-gray-200 hover:border-amber-400 hover:shadow-md'
-                          : 'bg-[#141a27] border-gray-800/90 hover:border-[#FACC15]/60 hover:bg-[#182030]'
+                          : 'bg-[#141a27] border-gray-800/90 hover:border-[#EAB308]/60 hover:bg-[#182030]'
                         }`}
                     >
                       <div className="starter-card-shimmer" />
@@ -906,24 +906,24 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                         <div className="flex items-center gap-2 sm:gap-2.5">
                           <div className={`starter-icon-wrap p-1.5 sm:p-2 rounded-xl transition-all duration-300 shadow-sm ${isLight
                               ? 'bg-amber-50 text-amber-700 group-hover:bg-amber-400 group-hover:text-gray-950 group-hover:scale-110 group-hover:rotate-[-4deg]'
-                              : 'bg-[#FACC15]/10 text-[#FACC15] group-hover:bg-[#FACC15] group-hover:text-[#0b0f19] group-hover:scale-110 group-hover:rotate-[-4deg]'
+                              : 'bg-[#EAB308]/10 text-[#EAB308] group-hover:bg-[#EAB308] group-hover:text-[#0b0f19] group-hover:scale-110 group-hover:rotate-[-4deg]'
                             }`}>
                             <Icon className="w-4 h-4 transition-colors" />
                           </div>
                           <span className={`starter-tag text-[9px] sm:text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full border transition-colors ${isLight
                               ? 'bg-gray-100 text-gray-600 border-gray-200 group-hover:border-amber-300 group-hover:text-amber-800'
-                              : 'bg-gray-800/80 text-gray-300 border-gray-700/60 group-hover:border-[#FACC15]/40 group-hover:text-[#FACC15]'
+                              : 'bg-gray-800/80 text-gray-300 border-gray-700/60 group-hover:border-[#EAB308]/40 group-hover:text-[#EAB308]'
                             }`}>
                             {card.category}
                           </span>
                         </div>
-                        <div className={`flex items-center group-hover:translate-x-1 opacity-60 group-hover:opacity-100 transition-all duration-200 ${isLight ? 'text-gray-400 group-hover:text-amber-600' : 'text-gray-500 group-hover:text-[#FACC15]'
+                        <div className={`flex items-center group-hover:translate-x-1 opacity-60 group-hover:opacity-100 transition-all duration-200 ${isLight ? 'text-gray-400 group-hover:text-amber-600' : 'text-gray-500 group-hover:text-[#EAB308]'
                           }`}>
                           <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
                       </div>
 
-                      <h4 className={`text-xs sm:text-sm font-semibold transition-colors mb-1 relative z-10 ${isLight ? 'text-gray-950 group-hover:text-amber-700' : 'text-white group-hover:text-[#FACC15]'
+                      <h4 className={`text-xs sm:text-sm font-semibold transition-colors mb-1 relative z-10 ${isLight ? 'text-gray-950 group-hover:text-amber-700' : 'text-white group-hover:text-[#EAB308]'
                         }`}>
                         {card.title}
                       </h4>
@@ -955,7 +955,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   <div
                     className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
                       ? isLight
-                        ? 'bg-amber-400 text-gray-950 border border-amber-500/40 rounded-tr-none font-medium'
+                        ? 'bg-[#EAB308] text-gray-950 border border-amber-500/40 rounded-tr-none font-medium'
                         : 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
                       : isLight
                         ? 'bg-white text-gray-900 border border-gray-200 rounded-tl-none prose shadow-sm max-w-none'
@@ -974,13 +974,13 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                                 rel="noopener noreferrer"
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs hover:underline transition cursor-pointer group ${isLight
                                     ? 'bg-amber-50/80 border-amber-300 text-amber-900 hover:border-amber-400'
-                                    : 'bg-[#141a27] border-gray-700 hover:border-[#FACC15] text-[#FACC15]'
+                                    : 'bg-[#141a27] border-gray-700 hover:border-[#EAB308] text-[#EAB308]'
                                   }`}
                                 title="Click to view file"
                               >
-                                <FileText className={`w-3.5 h-3.5 ${isLight ? 'text-amber-800' : 'text-[#FACC15]'}`} />
+                                <FileText className={`w-3.5 h-3.5 ${isLight ? 'text-amber-800' : 'text-[#EAB308]'}`} />
                                 <span className="font-medium">{f.original_name}</span>
-                                <ExternalLink className={`w-3 h-3 ${isLight ? 'text-amber-700' : 'text-gray-400 group-hover:text-[#FACC15]'}`} />
+                                <ExternalLink className={`w-3 h-3 ${isLight ? 'text-amber-700' : 'text-gray-400 group-hover:text-[#EAB308]'}`} />
                               </a>
                             ))}
                           </div>
@@ -1001,7 +1001,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                                     href={href}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-amber-600 dark:text-[#FACC15] hover:text-amber-700 dark:hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                    className="text-amber-600 dark:text-[#EAB308] hover:text-amber-700 dark:hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
                                     {...props}
                                   >
                                     <span>{children}</span>
@@ -1031,7 +1031,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
                                   if (inline) {
                                     return (
-                                      <code className="bg-[#141a27] text-[#FACC15] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                      <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
                                         {children}
                                       </code>
                                     );
@@ -1062,7 +1062,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                           <div className="flex justify-end pt-2">
                             <button
                               onClick={() => handleCopyCode(msg.content, idx)}
-                              className={`flex items-center gap-1.5 text-[11px] transition cursor-pointer ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#FACC15]'
+                              className={`flex items-center gap-1.5 text-[11px] transition cursor-pointer ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#EAB308]'
                                 }`}
                             >
                               {copiedIndex === idx ? (
@@ -1084,7 +1084,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   </div>
 
                   {msg.role === 'user' && (
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-[#FACC15] to-[#F59E0B] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-400/40 uppercase">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-[#EAB308] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-500/40 uppercase">
                       {user?.username ? user.username[0] : 'U'}
                     </div>
                   )}
@@ -1123,7 +1123,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                         : 'bg-[#1c2436] border-gray-700 text-gray-200'
                       }`}
                   >
-                    <FileText className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-[#FACC15]'}`} />
+                    <FileText className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-[#EAB308]'}`} />
                     <span className="max-w-[120px] sm:max-w-[150px] truncate font-medium">{file.original_name}</span>
                     <span className={`text-[9px] sm:text-[10px] font-mono ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>✓ Ready</span>
                     <button
@@ -1139,7 +1139,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                 {isUploadingFile && (
                   <div className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border text-[11px] sm:text-xs animate-pulse ${isLight
                       ? 'bg-amber-50 border-amber-300 text-amber-800'
-                      : 'bg-[#1c2436] border-yellow-500/50 text-[#FACC15]'
+                      : 'bg-[#1c2436] border-yellow-500/50 text-[#EAB308]'
                     }`}>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     <span>Processing...</span>
@@ -1150,7 +1150,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
             <div className={`relative flex items-center rounded-xl sm:rounded-2xl border transition duration-200 ${isLight
                 ? 'bg-white border-gray-300 shadow-md focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20'
-                : 'bg-[#141a27] border-gray-700/80 shadow-xl focus-within:border-[#FACC15] focus-within:ring-1 focus-within:ring-[#FACC15]/40'
+                : 'bg-[#141a27] border-gray-700/80 shadow-xl focus-within:border-[#EAB308] focus-within:ring-1 focus-within:ring-[#EAB308]/40'
               }`}>
 
               {/* File Attachment Button */}
@@ -1164,7 +1164,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   fileInputRef.current?.click()
                 }}
                 disabled={isUploadingFile || isGenerating}
-                className={`pl-2.5 sm:pl-3.5 pr-1 transition cursor-pointer disabled:opacity-30 shrink-0 ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#FACC15]'
+                className={`pl-2.5 sm:pl-3.5 pr-1 transition cursor-pointer disabled:opacity-30 shrink-0 ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#EAB308]'
                   }`}
                 title="Attach Document/File for context"
               >
@@ -1204,7 +1204,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
                   handleSend()
                 }}
                 disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
-                className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#FACC15] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
+                className="absolute right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#EAB308] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
               >
                 <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>

@@ -286,7 +286,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         isLight ? 'bg-white/95 border-gray-200 shadow-xs' : 'bg-[#111723]/95 border-gray-800'
       }`}>
         <div className="flex items-center gap-2.5 sm:gap-3">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FACC15] flex items-center justify-center text-gray-950 font-bold shadow-md shadow-yellow-500/20 shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#EAB308] flex items-center justify-center text-gray-950 font-bold shadow-md shadow-yellow-500/20 shrink-0">
             <Shield className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
           </div>
           <div>
@@ -294,7 +294,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               <h1 className={`text-sm sm:text-base font-bold tracking-tight ${isLight ? 'text-gray-950' : 'text-white'}`}>
                 sahajAI Admin
               </h1>
-              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#FACC15]/15 border border-[#FACC15]/30 text-[#FACC15] text-[9px] sm:text-[10px] font-mono font-bold uppercase">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#EAB308]/15 border border-[#EAB308]/30 text-[#EAB308] text-[9px] sm:text-[10px] font-mono font-bold uppercase">
                 Control Center
               </span>
             </div>
@@ -309,13 +309,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           {/* Switch to Chat Button */}
           <button
             onClick={onSwitchToChat}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition cursor-pointer border hover:border-[#FACC15] ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition cursor-pointer border hover:border-[#EAB308] ${
               isLight
                 ? 'bg-gray-100 hover:bg-gray-200/80 border-gray-200 text-gray-800'
                 : 'bg-gray-800 hover:bg-gray-750 border-gray-700 text-white'
             }`}
           >
-            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FACC15]" />
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#EAB308]" />
             <span className="hidden sm:inline">sahajAI Chat</span>
             <span className="sm:hidden">Chat</span>
           </button>
@@ -326,11 +326,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             className={`theme-toggle-btn p-1.5 sm:p-2 rounded-xl transition cursor-pointer border ${
               isLight
                 ? 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700'
-                : 'bg-gray-800 hover:bg-gray-700 border-transparent text-gray-300 hover:text-[#FACC15]'
+                : 'bg-gray-800 hover:bg-gray-700 border-transparent text-gray-300 hover:text-[#EAB308]'
             }`}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-blue-600" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-[#EAB308]" /> : <Moon className="w-4 h-4 text-blue-600" />}
           </button>
 
           {/* Refresh Data */}
@@ -344,7 +344,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             }`}
             title="Refresh Metrics"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#FACC15]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#EAB308]' : ''}`} />
           </button>
 
           {/* Admin Profile & Logout */}
@@ -393,14 +393,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           {/* Card 1: Users */}
           <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
             isLight
-              ? 'bg-white border-gray-200 shadow-xs hover:border-[#FACC15]'
-              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+              ? 'bg-white border-gray-200 shadow-xs hover:border-[#EAB308]'
+              : 'bg-[#121722] border-gray-800 hover:border-[#EAB308]/40'
           }`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
                 Total Users
               </span>
-              <div className="w-9 h-9 rounded-xl bg-[#FACC15]/10 text-[#FACC15] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-[#EAB308]/10 text-[#EAB308] flex items-center justify-center">
                 <Users className="w-5 h-5" />
               </div>
             </div>
@@ -416,7 +416,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
             isLight
               ? 'bg-white border-gray-200 shadow-xs hover:border-amber-400'
-              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+              : 'bg-[#121722] border-gray-800 hover:border-[#EAB308]/40'
           }`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -438,7 +438,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
             isLight
               ? 'bg-white border-gray-200 shadow-xs hover:border-blue-400'
-              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+              : 'bg-[#121722] border-gray-800 hover:border-[#EAB308]/40'
           }`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -460,7 +460,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
             isLight
               ? 'bg-white border-gray-200 shadow-xs hover:border-emerald-400'
-              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+              : 'bg-[#121722] border-gray-800 hover:border-[#EAB308]/40'
           }`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -500,7 +500,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'users'
-                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
+                ? 'bg-[#EAB308] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
                 : isLight
                 ? 'text-gray-600 hover:text-gray-950 hover:bg-gray-100'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -514,7 +514,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             onClick={() => setActiveTab('workspaces')}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'workspaces'
-                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
+                ? 'bg-[#EAB308] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
                 : isLight
                 ? 'text-gray-600 hover:text-gray-950 hover:bg-gray-100'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -528,7 +528,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             onClick={() => setActiveTab('settings')}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'settings'
-                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
+                ? 'bg-[#EAB308] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
                 : isLight
                 ? 'text-gray-600 hover:text-gray-950 hover:bg-gray-100'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -566,7 +566,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                   placeholder="Filter users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className={`w-full pl-9 pr-3 py-1.5 border rounded-xl text-xs outline-none focus:border-[#FACC15] transition ${
+                  className={`w-full pl-9 pr-3 py-1.5 border rounded-xl text-xs outline-none focus:border-[#EAB308] transition ${
                     isLight
                       ? 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
                       : 'bg-[#0d1117] border-gray-700 text-white placeholder-gray-500'
@@ -610,7 +610,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                             u.role === 'admin'
-                              ? 'bg-[#FACC15]/15 text-[#D97706] dark:text-[#FACC15] border border-[#FACC15]/30'
+                              ? 'bg-[#EAB308]/15 text-[#D97706] dark:text-[#EAB308] border border-[#EAB308]/30'
                               : isLight
                               ? 'bg-gray-100 text-gray-700 border border-gray-200'
                               : 'bg-gray-800 text-gray-300 border border-gray-700'
@@ -681,7 +681,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                     isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#0d1117] border-gray-800'
                   }`}>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="w-3 h-3 rounded-full bg-[#FACC15]" />
+                      <span className="w-3 h-3 rounded-full bg-[#EAB308]" />
                       <h4 className={`text-xs font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>Admin Workspace</h4>
                     </div>
                     <p className={`text-[11px] ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>Owner: admin (admin@sahaj.ai)</p>
@@ -743,7 +743,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <div>
                   <h3 className={`text-sm font-bold flex items-center gap-2 ${isLight ? 'text-gray-950' : 'text-white'}`}>
-                    <Server className="w-4 h-4 text-[#FACC15]" />
+                    <Server className="w-4 h-4 text-[#EAB308]" />
                     LLM Providers & Engine Credentials
                   </h3>
                   <p className={`text-xs mt-0.5 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -757,7 +757,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                     setEditingProvider(null)
                     setIsProviderModalOpen(true)
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-yellow-500/20 shrink-0 self-start sm:self-auto"
+                  className="px-4 py-2 rounded-xl bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-yellow-500/20 shrink-0 self-start sm:self-auto"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add LLM Provider</span>
@@ -793,7 +793,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
                                 isLight
                                   ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                                  : 'bg-amber-500/10 text-[#FACC15] border border-amber-500/20'
+                                  : 'bg-amber-500/10 text-[#EAB308] border border-amber-500/20'
                               }`}>
                                 {avatarInitials}
                               </div>
@@ -871,7 +871,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                                 className={`p-1.5 rounded-lg border transition cursor-pointer ${
                                   isLight
                                     ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
-                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-[#FACC15] border-amber-500/30'
+                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-[#EAB308] border-amber-500/30'
                                 }`}
                               >
                                 <Zap className="w-3.5 h-3.5" />
@@ -918,7 +918,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121722] border-gray-800'
             }`}>
               <div className="flex items-center gap-2.5 mb-4">
-                <Database className="w-5 h-5 text-[#FACC15]" />
+                <Database className="w-5 h-5 text-[#EAB308]" />
                 <h3 className={`text-sm font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>MySQL Database Settings</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
@@ -932,7 +932,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                   isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
                 }`}>
                   <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Database Name</span>
-                  <span className="text-[#FACC15] font-mono font-bold">sahaj_ai</span>
+                  <span className="text-[#EAB308] font-mono font-bold">sahaj_ai</span>
                 </div>
                 <div className={`p-3 rounded-xl border ${
                   isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
