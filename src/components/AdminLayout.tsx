@@ -913,43 +913,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               </div>
             </div>
 
-            {/* Database Engine Settings */}
-            <div className={`p-5 rounded-2xl border transition-colors ${
-              isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121722] border-gray-800'
-            }`}>
-              <div className="flex items-center gap-2.5 mb-4">
-                <Database className="w-5 h-5 text-[#EAB308]" />
-                <h3 className={`text-sm font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>MySQL Database Settings</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                <div className={`p-3 rounded-xl border ${
-                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
-                }`}>
-                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Host & Port</span>
-                  <span className={`font-mono font-semibold ${isLight ? 'text-gray-950' : 'text-white'}`}>localhost:3306</span>
-                </div>
-                <div className={`p-3 rounded-xl border ${
-                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
-                }`}>
-                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Database Name</span>
-                  <span className="text-[#EAB308] font-mono font-bold">sahaj_ai</span>
-                </div>
-                <div className={`p-3 rounded-xl border ${
-                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
-                }`}>
-                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Driver</span>
-                  <span className={`font-mono font-semibold ${isLight ? 'text-gray-950' : 'text-white'}`}>PyMySQL (Pure Python)</span>
-                </div>
-                <div className={`p-3 rounded-xl border ${
-                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
-                }`}>
-                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Connection State</span>
-                  <span className={`font-semibold ${dbConnected ? 'text-emerald-500' : 'text-amber-500'}`}>
-                    {dbConnected ? '● Online & Healthy' : '○ Standby / Service Checking'}
-                  </span>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </main>
