@@ -275,7 +275,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   )
 
   return (
-    <div className="h-screen bg-[#0b0f19] text-gray-100 font-sans flex flex-col overflow-y-auto">
+    <div className="h-[100dvh] bg-[#0b0f19] text-gray-100 font-sans flex flex-col overflow-y-auto">
       {/* ========================================================= */}
       {/* ADMIN HEADER */}
       {/* ========================================================= */}

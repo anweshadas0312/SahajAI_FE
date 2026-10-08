@@ -340,7 +340,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   ]
 
   return (
-    <div className="flex h-screen bg-[#0b0f19] text-gray-100 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#0b0f19] text-gray-100 font-sans overflow-hidden">
       {/* Mobile Backdrop Overlay */}
       {isMobileSidebarOpen && (
         <div
