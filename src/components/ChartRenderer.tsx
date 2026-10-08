@@ -185,7 +185,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
         </div>
 
         {/* Chart Type Selector */}
-        <div className="flex items-center gap-1 p-1 rounded-lg border self-start sm:self-auto" style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
+        <div className="flex items-center gap-1 p-1 rounded-lg border self-start sm:self-auto shrink-0" style={{ backgroundColor: cardBg, borderColor: cardBorder }}>
           <button
             onClick={() => setActiveType('pie')}
             className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
@@ -231,11 +231,11 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
         </div>
       </div>
 
-      {/* Chart Canvas */}
+      {/* Chart Canvas Container */}
       <div className="w-full h-72 sm:h-80 relative">
         <ResponsiveContainer width="100%" height="100%">
           {activeType === 'pie' ? (
-            <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+            <PieChart margin={{ top: 15, right: 15, left: 15, bottom: 15 }}>
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
               <Pie
                 data={data}
@@ -243,13 +243,16 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
                 cy="50%"
                 outerRadius={95}
                 innerRadius={40}
-                paddingAngle={4}
+                paddingAngle={3}
                 dataKey="value"
                 nameKey="name"
                 label={({ name, percent }: { name?: string; percent?: number }) => {
+                  const pct = (percent || 0) * 100;
+                  // Hide label text on tiny (< 3%) or 0% slices to avoid label text collisions
+                  if (pct < 3) return '';
                   const labelName = name ?? '';
-                  const shortName = labelName.length > 10 ? labelName.substring(0, 8) + '...' : labelName;
-                  return `${shortName} (${((percent || 0) * 100).toFixed(0)}%)`;
+                  const shortName = labelName.length > 12 ? labelName.substring(0, 10) + '...' : labelName;
+                  return `${shortName} (${pct.toFixed(0)}%)`;
                 }}
                 labelLine={false}
               >
@@ -259,33 +262,34 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
               </Pie>
             </PieChart>
           ) : activeType === 'bar' ? (
-            <BarChart data={data} margin={{ top: 15, right: 20, left: 0, bottom: 55 }}>
+            <BarChart data={data} margin={{ top: 20, right: 20, left: 5, bottom: 65 }} barCategoryGap="20%">
               <XAxis
                 dataKey="name"
                 stroke={axisColor}
                 tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }}
                 interval={0}
-                angle={-25}
+                angle={-30}
                 textAnchor="end"
-                tickFormatter={(val: string) => (val.length > 12 ? val.substring(0, 10) + '...' : val)}
+                tickFormatter={(val: string) => (val.length > 13 ? val.substring(0, 11) + '...' : val)}
               />
               <YAxis stroke={axisColor} tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }} />
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="value" maxBarSize={45} radius={[6, 6, 0, 0]}>
                 {data.map((_, index) => (
                   <Cell key={`bar-cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Bar>
             </BarChart>
           ) : (
-            <LineChart data={data} margin={{ top: 15, right: 20, left: 0, bottom: 55 }}>
+            <LineChart data={data} margin={{ top: 20, right: 20, left: 5, bottom: 65 }}>
               <XAxis
                 dataKey="name"
                 stroke={axisColor}
                 tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }}
-                angle={-25}
+                interval={0}
+                angle={-30}
                 textAnchor="end"
-                tickFormatter={(val: string) => (val.length > 12 ? val.substring(0, 10) + '...' : val)}
+                tickFormatter={(val: string) => (val.length > 13 ? val.substring(0, 11) + '...' : val)}
               />
               <YAxis stroke={axisColor} tick={{ fill: axisTickColor, fontSize: 11, fontWeight: 500 }} />
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
