@@ -43,6 +43,7 @@ interface UserAdminRow {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   const { user, token, logout, dbConnected, checkDbStatus } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const isLight = theme === 'light'
   const [activeTab, setActiveTab] = useState<'users' | 'workspaces' | 'settings'>('users')
   const [stats, setStats] = useState<AdminStats>({
     total_users: 2,
@@ -275,23 +276,31 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   )
 
   return (
-    <div className="h-[100dvh] bg-[#0b0f19] text-gray-100 font-sans flex flex-col overflow-y-auto">
+    <div className={`h-[100dvh] font-sans flex flex-col overflow-y-auto transition-colors duration-200 ${
+      isLight ? 'bg-[#f8fafc] text-gray-900' : 'bg-[#0b0f19] text-gray-100'
+    }`}>
       {/* ========================================================= */}
       {/* ADMIN HEADER */}
       {/* ========================================================= */}
-      <header className="min-h-16 px-3 sm:px-6 py-2.5 sm:py-0 bg-[#111723] border-b border-gray-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0 sticky top-0 z-30">
+      <header className={`min-h-16 px-3 sm:px-6 py-2.5 sm:py-0 border-b flex flex-wrap items-center justify-between gap-2.5 shrink-0 sticky top-0 z-30 backdrop-blur-md ${
+        isLight ? 'bg-white/95 border-gray-200 shadow-xs' : 'bg-[#111723]/95 border-gray-800'
+      }`}>
         <div className="flex items-center gap-2.5 sm:gap-3">
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#FACC15] flex items-center justify-center text-gray-950 font-bold shadow-md shadow-yellow-500/20 shrink-0">
             <Shield className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
           </div>
           <div>
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">sahajAI Admin</h1>
+              <h1 className={`text-sm sm:text-base font-bold tracking-tight ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                sahajAI Admin
+              </h1>
               <span className="px-1.5 sm:px-2 py-0.5 rounded-full bg-[#FACC15]/15 border border-[#FACC15]/30 text-[#FACC15] text-[9px] sm:text-[10px] font-mono font-bold uppercase">
                 Control Center
               </span>
             </div>
-            <p className="text-[11px] sm:text-xs text-gray-400 hidden xs:block">Multi-tenant Workspace & User Oversight</p>
+            <p className={`text-[11px] sm:text-xs hidden xs:block ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+              Multi-tenant Workspace &amp; User Oversight
+            </p>
           </div>
         </div>
 
@@ -300,7 +309,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           {/* Switch to Chat Button */}
           <button
             onClick={onSwitchToChat}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-gray-800 hover:bg-gray-750 border border-gray-700 text-white text-xs font-semibold transition cursor-pointer hover:border-[#FACC15]"
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold transition cursor-pointer border hover:border-[#FACC15] ${
+              isLight
+                ? 'bg-gray-100 hover:bg-gray-200/80 border-gray-200 text-gray-800'
+                : 'bg-gray-800 hover:bg-gray-750 border-gray-700 text-white'
+            }`}
           >
             <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FACC15]" />
             <span className="hidden sm:inline">sahajAI Chat</span>
@@ -310,31 +323,45 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="theme-toggle-btn p-1.5 sm:p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-[#FACC15] transition cursor-pointer"
+            className={`theme-toggle-btn p-1.5 sm:p-2 rounded-xl transition cursor-pointer border ${
+              isLight
+                ? 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700'
+                : 'bg-gray-800 hover:bg-gray-700 border-transparent text-gray-300 hover:text-[#FACC15]'
+            }`}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-blue-500" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-blue-600" />}
           </button>
 
           {/* Refresh Data */}
           <button
             onClick={fetchAdminData}
             disabled={isLoading}
-            className="p-1.5 sm:p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition cursor-pointer disabled:opacity-50"
+            className={`p-1.5 sm:p-2 rounded-xl transition cursor-pointer disabled:opacity-50 border ${
+              isLight
+                ? 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-gray-700 hover:text-gray-950'
+                : 'bg-gray-800 hover:bg-gray-700 border-transparent text-gray-400 hover:text-white'
+            }`}
             title="Refresh Metrics"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#FACC15]' : ''}`} />
           </button>
 
           {/* Admin Profile & Logout */}
-          <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-gray-800">
+          <div className={`flex items-center gap-2 pl-2 sm:pl-3 border-l ${isLight ? 'border-gray-200' : 'border-gray-800'}`}>
             <div className="text-right">
-              <p className="text-xs font-semibold text-white truncate max-w-[80px] sm:max-w-none">{user?.username || 'Admin'}</p>
-              <p className="text-[10px] text-gray-400 hidden sm:block">{user?.email}</p>
+              <p className={`text-xs font-semibold truncate max-w-[80px] sm:max-w-none ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                {user?.username || 'Admin'}
+              </p>
+              <p className={`text-[10px] hidden sm:block ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                {user?.email}
+              </p>
             </div>
             <button
               onClick={logout}
-              className="p-1.5 sm:p-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-gray-800 transition cursor-pointer"
+              className={`p-1.5 sm:p-2 rounded-xl transition cursor-pointer ${
+                isLight ? 'text-gray-500 hover:text-red-600 hover:bg-red-50' : 'text-gray-400 hover:text-red-400 hover:bg-gray-800'
+              }`}
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -364,61 +391,101 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         {/* STATS OVERVIEW CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {/* Card 1: Users */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
+            isLight
+              ? 'bg-white border-gray-200 shadow-xs hover:border-[#FACC15]'
+              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Users</span>
+              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                Total Users
+              </span>
               <div className="w-9 h-9 rounded-xl bg-[#FACC15]/10 text-[#FACC15] flex items-center justify-center">
                 <Users className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_users}</span>
-              <span className="text-xs text-gray-500 ml-2">Registered Accounts</span>
+              <span className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                {stats.total_users}
+              </span>
+              <span className={`text-xs ml-2 ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>Registered Accounts</span>
             </div>
           </div>
 
           {/* Card 2: Workspaces */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
+            isLight
+              ? 'bg-white border-gray-200 shadow-xs hover:border-amber-400'
+              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Workspaces</span>
-              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                Workspaces
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
                 <Layers className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_workspaces}</span>
-              <span className="text-xs text-gray-500 ml-2">Isolated Environments</span>
+              <span className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                {stats.total_workspaces}
+              </span>
+              <span className={`text-xs ml-2 ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>Isolated Environments</span>
             </div>
           </div>
 
           {/* Card 3: Conversations */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
+            isLight
+              ? 'bg-white border-gray-200 shadow-xs hover:border-blue-400'
+              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Conversations</span>
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                Conversations
+              </span>
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3">
-              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_conversations}</span>
-              <span className="text-xs text-gray-500 ml-2">Active Chat Sessions</span>
+              <span className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                {stats.total_conversations}
+              </span>
+              <span className={`text-xs ml-2 ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>Active Chat Sessions</span>
             </div>
           </div>
 
           {/* Card 4: Database & Messages */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#121722] border border-gray-800 hover:border-[#FACC15]/40 transition duration-200 relative overflow-hidden group">
+          <div className={`p-4 sm:p-5 rounded-2xl border transition duration-200 relative overflow-hidden group ${
+            isLight
+              ? 'bg-white border-gray-200 shadow-xs hover:border-emerald-400'
+              : 'bg-[#121722] border-gray-800 hover:border-[#FACC15]/40'
+          }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Database Status</span>
-              <div className={`w-9 h-9 rounded-xl ${dbConnected ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'} flex items-center justify-center`}>
+              <span className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                Database Status
+              </span>
+              <div className={`w-9 h-9 rounded-xl ${dbConnected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'} flex items-center justify-center`}>
                 <Database className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3 flex items-center justify-between">
               <div>
-                <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.total_messages}</span>
-                <span className="text-xs text-gray-500 ml-2">Messages</span>
+                <span className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                  {stats.total_messages}
+                </span>
+                <span className={`text-xs ml-2 ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>Messages</span>
               </div>
-              <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold ${dbConnected ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}`}>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold ${
+                dbConnected
+                  ? isLight
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                  : isLight
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-amber-950 text-amber-400 border border-amber-800'
+              }`}>
                 {dbConnected ? 'MySQL 8' : 'Standby'}
               </span>
             </div>
@@ -426,12 +493,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         </div>
 
         {/* TAB CONTROLS */}
-        <div className="flex items-center gap-2 border-b border-gray-800 pb-3 overflow-x-auto whitespace-nowrap scrollbar-none">
+        <div className={`flex items-center gap-2 border-b pb-3 overflow-x-auto whitespace-nowrap scrollbar-none ${
+          isLight ? 'border-gray-200' : 'border-gray-800'
+        }`}>
           <button
             onClick={() => setActiveTab('users')}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'users'
-                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15'
+                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
+                : isLight
+                ? 'text-gray-600 hover:text-gray-950 hover:bg-gray-100'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
             }`}
           >
@@ -443,7 +514,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             onClick={() => setActiveTab('workspaces')}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'workspaces'
-                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15'
+                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
+                : isLight
+                ? 'text-gray-600 hover:text-gray-950 hover:bg-gray-100'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
             }`}
           >
@@ -455,7 +528,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             onClick={() => setActiveTab('settings')}
             className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 ${
               activeTab === 'settings'
-                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15'
+                ? 'bg-[#FACC15] text-gray-950 shadow-md shadow-yellow-500/15 font-bold'
+                : isLight
+                ? 'text-gray-600 hover:text-gray-950 hover:bg-gray-100'
                 : 'text-gray-400 hover:text-white hover:bg-gray-800'
             }`}
           >
@@ -468,22 +543,34 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         {/* TAB 1: USER MANAGEMENT */}
         {/* ========================================================= */}
         {activeTab === 'users' && (
-          <div className="bg-[#121722] border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className={`border rounded-2xl overflow-hidden shadow-sm transition-colors ${
+            isLight ? 'bg-white border-gray-200' : 'bg-[#121722] border-gray-800'
+          }`}>
             {/* Table Header & Search */}
-            <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className={`p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              isLight ? 'border-gray-200 bg-white' : 'border-gray-800 bg-[#121722]'
+            }`}>
               <div>
-                <h3 className="text-sm font-bold text-white">Registered Users & Access Roles</h3>
-                <p className="text-xs text-gray-400">Manage privileges, role changes, and workspace assignments</p>
+                <h3 className={`text-sm font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>
+                  Registered Users &amp; Access Roles
+                </h3>
+                <p className={`text-xs ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                  Manage privileges, role changes, and workspace assignments
+                </p>
               </div>
 
               <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isLight ? 'text-gray-400' : 'text-gray-500'}`} />
                 <input
                   type="text"
                   placeholder="Filter users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-[#0d1117] border border-gray-700 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#FACC15]"
+                  className={`w-full pl-9 pr-3 py-1.5 border rounded-xl text-xs outline-none focus:border-[#FACC15] transition ${
+                    isLight
+                      ? 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'
+                      : 'bg-[#0d1117] border-gray-700 text-white placeholder-gray-500'
+                  }`}
                 />
               </div>
             </div>
@@ -491,7 +578,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             {/* Users Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0e131d] text-gray-400 uppercase text-[10px] tracking-wider border-b border-gray-800">
+                <thead className={`uppercase text-[10px] tracking-wider border-b ${
+                  isLight
+                    ? 'bg-gray-50/90 text-gray-500 border-gray-200'
+                    : 'bg-[#0e131d] text-gray-400 border-gray-800'
+                }`}>
                   <tr>
                     <th className="py-3 px-4">User</th>
                     <th className="py-3 px-4">Email</th>
@@ -501,47 +592,59 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800/60">
+                <tbody className={`divide-y ${isLight ? 'divide-gray-100' : 'divide-gray-800/60'}`}>
                   {filteredUsers.map(u => (
-                    <tr key={u.id} className="hover:bg-gray-850/40 transition">
+                    <tr key={u.id} className={`${isLight ? 'hover:bg-gray-50/80' : 'hover:bg-gray-850/40'} transition`}>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-gray-300 uppercase">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold uppercase text-xs ${
+                            isLight ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-gray-800 text-gray-300'
+                          }`}>
                             {u.username[0]}
                           </div>
-                          <span className="font-semibold text-white">{u.username}</span>
+                          <span className={`font-semibold ${isLight ? 'text-gray-900' : 'text-white'}`}>{u.username}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-300 font-mono text-[11px]">{u.email}</td>
+                      <td className={`py-3 px-4 font-mono text-[11px] ${isLight ? 'text-gray-600' : 'text-gray-300'}`}>{u.email}</td>
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                             u.role === 'admin'
-                              ? 'bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30'
+                              ? 'bg-[#FACC15]/15 text-[#D97706] dark:text-[#FACC15] border border-[#FACC15]/30'
+                              : isLight
+                              ? 'bg-gray-100 text-gray-700 border border-gray-200'
                               : 'bg-gray-800 text-gray-300 border border-gray-700'
                           }`}
                         >
                           {u.role}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center text-gray-300 font-medium">
+                      <td className={`py-3 px-4 text-center font-medium ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>
                         {u.workspace_count || 1}
                       </td>
-                      <td className="py-3 px-4 text-center text-gray-300 font-medium">
+                      <td className={`py-3 px-4 text-center font-medium ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>
                         {u.conversation_count || 0}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleRoleToggle(u.id, u.role)}
-                            className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-[11px] font-medium transition cursor-pointer"
+                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer ${
+                              isLight
+                                ? 'bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-200'
+                                : 'bg-gray-800 hover:bg-gray-750 text-gray-300 hover:text-white border-gray-700'
+                            }`}
                           >
                             Set {u.role === 'admin' ? 'User' : 'Admin'}
                           </button>
                           {u.id !== user?.id && (
                             <button
                               onClick={() => handleDeleteUser(u.id)}
-                              className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/30 transition cursor-pointer"
+                              className={`p-1 rounded-lg transition cursor-pointer ${
+                                isLight
+                                  ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                                  : 'text-gray-500 hover:text-red-400 hover:bg-red-950/30'
+                              }`}
                               title="Delete User"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -561,31 +664,45 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         {/* TAB 2: WORKSPACE OVERSIGHT */}
         {/* ========================================================= */}
         {activeTab === 'workspaces' && (
-          <div className="bg-[#121722] border border-gray-800 rounded-2xl overflow-hidden shadow-xl p-5">
-            <h3 className="text-sm font-bold text-white mb-1">Global Workspace Directory</h3>
-            <p className="text-xs text-gray-400 mb-4">All isolated tenant workspaces and data containers</p>
+          <div className={`border rounded-2xl overflow-hidden shadow-sm p-5 transition-colors ${
+            isLight ? 'bg-white border-gray-200' : 'bg-[#121722] border-gray-800'
+          }`}>
+            <h3 className={`text-sm font-bold mb-1 ${isLight ? 'text-gray-950' : 'text-white'}`}>
+              Global Workspace Directory
+            </h3>
+            <p className={`text-xs mb-4 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+              All isolated tenant workspaces and data containers
+            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {workspacesList.length === 0 ? (
                 <>
-                  <div className="p-4 rounded-xl bg-[#0d1117] border border-gray-800">
+                  <div className={`p-4 rounded-xl border ${
+                    isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#0d1117] border-gray-800'
+                  }`}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-3 h-3 rounded-full bg-[#FACC15]" />
-                      <h4 className="text-xs font-bold text-white">Admin Workspace</h4>
+                      <h4 className={`text-xs font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>Admin Workspace</h4>
                     </div>
-                    <p className="text-[11px] text-gray-400">Owner: admin (admin@sahaj.ai)</p>
-                    <div className="mt-3 pt-2 border-t border-gray-800/80 flex justify-between text-[11px] text-gray-500">
+                    <p className={`text-[11px] ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>Owner: admin (admin@sahaj.ai)</p>
+                    <div className={`mt-3 pt-2 border-t flex justify-between text-[11px] ${
+                      isLight ? 'border-gray-200 text-gray-500' : 'border-gray-800/80 text-gray-500'
+                    }`}>
                       <span>Status: Default</span>
                       <span>3 Conversations</span>
                     </div>
                   </div>
-                  <div className="p-4 rounded-xl bg-[#0d1117] border border-gray-800">
+                  <div className={`p-4 rounded-xl border ${
+                    isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#0d1117] border-gray-800'
+                  }`}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                      <h4 className="text-xs font-bold text-white">Default Workspace</h4>
+                      <h4 className={`text-xs font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>Default Workspace</h4>
                     </div>
-                    <p className="text-[11px] text-gray-400">Owner: sahaj_user (user@sahaj.ai)</p>
-                    <div className="mt-3 pt-2 border-t border-gray-800/80 flex justify-between text-[11px] text-gray-500">
+                    <p className={`text-[11px] ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>Owner: sahaj_user (user@sahaj.ai)</p>
+                    <div className={`mt-3 pt-2 border-t flex justify-between text-[11px] ${
+                      isLight ? 'border-gray-200 text-gray-500' : 'border-gray-800/80 text-gray-500'
+                    }`}>
                       <span>Status: Active</span>
                       <span>2 Conversations</span>
                     </div>
@@ -593,13 +710,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                 </>
               ) : (
                 workspacesList.map(ws => (
-                  <div key={ws.id} className="p-4 rounded-xl bg-[#0d1117] border border-gray-800">
+                  <div key={ws.id} className={`p-4 rounded-xl border ${
+                    isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#0d1117] border-gray-800'
+                  }`}>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: ws.icon_color }} />
-                      <h4 className="text-xs font-bold text-white">{ws.name}</h4>
+                      <h4 className={`text-xs font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>{ws.name}</h4>
                     </div>
-                    <p className="text-[11px] text-gray-400">Owner: {ws.username} ({ws.email})</p>
-                    <div className="mt-3 pt-2 border-t border-gray-800/80 flex justify-between text-[11px] text-gray-500">
+                    <p className={`text-[11px] ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>Owner: {ws.username} ({ws.email})</p>
+                    <div className={`mt-3 pt-2 border-t flex justify-between text-[11px] ${
+                      isLight ? 'border-gray-200 text-gray-500' : 'border-gray-800/80 text-gray-500'
+                    }`}>
                       <span>Created: {new Date(ws.created_at).toLocaleDateString()}</span>
                       <span>{ws.conversation_count} Conversations</span>
                     </div>
@@ -615,15 +736,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         {/* ========================================================= */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
-            {/* LLM Providers Table Section (Matching Screenshots) */}
-            <div className="bg-[#121722] border border-gray-800 rounded-2xl overflow-hidden shadow-xl p-5">
+            {/* LLM Providers Table Section */}
+            <div className={`border rounded-2xl overflow-hidden p-5 transition-colors ${
+              isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121722] border-gray-800 shadow-xl'
+            }`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <h3 className={`text-sm font-bold flex items-center gap-2 ${isLight ? 'text-gray-950' : 'text-white'}`}>
                     <Server className="w-4 h-4 text-[#FACC15]" />
                     LLM Providers & Engine Credentials
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className={`text-xs mt-0.5 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
                     Manage direct credentials, custom model endpoints, and LLM timeouts.
                   </p>
                 </div>
@@ -645,7 +768,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-800 text-[10px] font-bold tracking-wider uppercase text-gray-500">
+                    <tr className={`border-b text-[10px] font-bold tracking-wider uppercase ${
+                      isLight ? 'border-gray-200 text-gray-500 bg-gray-50/75' : 'border-gray-800 text-gray-500'
+                    }`}>
                       <th className="py-3 px-3">ID</th>
                       <th className="py-3 px-3">PROVIDER & NAME</th>
                       <th className="py-3 px-3">MODEL & ENDPOINT</th>
@@ -655,46 +780,56 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                       <th className="py-3 px-3 text-right">ACTIONS</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800/60 text-xs">
+                  <tbody className={`divide-y text-xs ${isLight ? 'divide-gray-200' : 'divide-gray-800/60'}`}>
                     {providersList.map(prov => {
                       const avatarInitials = prov.name
                         ? prov.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
                         : 'AI'
                       return (
-                        <tr key={prov.id} className="hover:bg-[#182030]/50 transition">
-                          <td className="py-3.5 px-3 font-mono text-gray-400 font-semibold">#{prov.id}</td>
+                        <tr key={prov.id} className={`transition ${isLight ? 'hover:bg-gray-50/80' : 'hover:bg-[#182030]/50'}`}>
+                          <td className={`py-3.5 px-3 font-mono font-semibold ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>#{prov.id}</td>
                           <td className="py-3.5 px-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-amber-500/10 text-[#FACC15] border border-amber-500/20 flex items-center justify-center text-xs font-black shrink-0">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
+                                isLight
+                                  ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                                  : 'bg-amber-500/10 text-[#FACC15] border border-amber-500/20'
+                              }`}>
                                 {avatarInitials}
                               </div>
                               <div>
-                                <div className="font-bold text-white">{prov.name}</div>
-                                <div className="text-[11px] text-gray-500">{prov.provider_type}</div>
+                                <div className={`font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>{prov.name}</div>
+                                <div className={`text-[11px] ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>{prov.provider_type}</div>
                               </div>
                             </div>
                           </td>
                           <td className="py-3.5 px-3">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-300 font-mono text-[11px] border border-gray-700">
+                              <span className={`px-2 py-0.5 rounded font-mono text-[11px] border ${
+                                isLight ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-gray-800 text-gray-300 border-gray-700'
+                              }`}>
                                 {prov.model_name}
                               </span>
-                              <span className="px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-400 text-[10px] flex items-center gap-1 border border-gray-700/60">
-                                <Zap className="w-2.5 h-2.5 text-amber-400" />
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] flex items-center gap-1 border ${
+                                isLight ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-gray-800/80 text-gray-400 border-gray-700/60'
+                              }`}>
+                                <Zap className="w-2.5 h-2.5 text-amber-500" />
                                 {prov.timeout || 600}s
                               </span>
                             </div>
-                            <div className="text-[11px] font-mono text-gray-500 truncate max-w-[220px]" title={prov.endpoint}>
+                            <div className={`text-[11px] font-mono truncate max-w-[220px] ${isLight ? 'text-gray-500' : 'text-gray-500'}`} title={prov.endpoint}>
                               {prov.endpoint || 'Default System Host'}
                             </div>
                           </td>
-                          <td className="py-3.5 px-3 font-mono text-gray-400 text-[11px]">
+                          <td className="py-3.5 px-3 font-mono text-[11px]">
                             {prov.api_key && prov.api_key !== 'NA' ? (
-                              <span className="px-2 py-1 rounded bg-gray-900 border border-gray-800 text-gray-300">
+                              <span className={`px-2 py-1 rounded border ${
+                                isLight ? 'bg-gray-100 border-gray-200 text-gray-700' : 'bg-gray-900 border-gray-800 text-gray-300'
+                              }`}>
                                 {prov.api_key.length > 12 ? prov.api_key.substring(0, 4) + '••••••••' + prov.api_key.substring(prov.api_key.length - 4) : '••••••••'}
                               </span>
                             ) : (
-                              <span className="text-gray-600">NA</span>
+                              <span className={isLight ? 'text-gray-400' : 'text-gray-600'}>NA</span>
                             )}
                           </td>
                           <td className="py-3.5 px-3">
@@ -714,17 +849,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                           </td>
                           <td className="py-3.5 px-3 text-[11px]">
                             {prov.test_status === 'testing' ? (
-                              <span className="text-amber-400 animate-pulse font-medium">Testing...</span>
+                              <span className="text-amber-500 animate-pulse font-medium">Testing...</span>
                             ) : prov.test_status === 'success' ? (
-                              <span className="text-emerald-400 font-medium" title={prov.test_message}>
+                              <span className="text-emerald-500 font-medium" title={prov.test_message}>
                                 ✓ Connected
                               </span>
                             ) : prov.test_status === 'failed' ? (
-                              <span className="text-red-400 font-medium" title={prov.test_message}>
+                              <span className="text-red-500 font-medium" title={prov.test_message}>
                                 ✕ Failed
                               </span>
                             ) : (
-                              <span className="text-gray-500 italic">Not tested yet</span>
+                              <span className={`italic ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>Not tested yet</span>
                             )}
                           </td>
                           <td className="py-3.5 px-3 text-right">
@@ -733,7 +868,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                                 type="button"
                                 onClick={() => handleTestProvider(prov.id)}
                                 title="Live Test Ping"
-                                className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-[#FACC15] border border-amber-500/30 transition cursor-pointer"
+                                className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                                  isLight
+                                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200'
+                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-[#FACC15] border-amber-500/30'
+                                }`}
                               >
                                 <Zap className="w-3.5 h-3.5" />
                               </button>
@@ -744,7 +883,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                                   setIsProviderModalOpen(true)
                                 }}
                                 title="Edit Provider"
-                                className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 transition cursor-pointer"
+                                className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                                  isLight
+                                    ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200'
+                                    : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                }`}
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
@@ -752,7 +895,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                                 type="button"
                                 onClick={() => handleDeleteProvider(prov.id)}
                                 title="Delete Provider"
-                                className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition cursor-pointer"
+                                className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                                  isLight
+                                    ? 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
+                                    : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30'
+                                }`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -767,27 +914,37 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
             </div>
 
             {/* Database Engine Settings */}
-            <div className="p-5 rounded-2xl bg-[#121722] border border-gray-800">
+            <div className={`p-5 rounded-2xl border transition-colors ${
+              isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#121722] border-gray-800'
+            }`}>
               <div className="flex items-center gap-2.5 mb-4">
                 <Database className="w-5 h-5 text-[#FACC15]" />
-                <h3 className="text-sm font-bold text-white">MySQL Database Settings</h3>
+                <h3 className={`text-sm font-bold ${isLight ? 'text-gray-950' : 'text-white'}`}>MySQL Database Settings</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                <div className="p-3 bg-[#182030] rounded-xl border border-gray-700/60">
-                  <span className="text-gray-400 block text-[11px] mb-1">Host & Port</span>
-                  <span className="text-white font-mono font-semibold">localhost:3306</span>
+                <div className={`p-3 rounded-xl border ${
+                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
+                }`}>
+                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Host & Port</span>
+                  <span className={`font-mono font-semibold ${isLight ? 'text-gray-950' : 'text-white'}`}>localhost:3306</span>
                 </div>
-                <div className="p-3 bg-[#182030] rounded-xl border border-gray-700/60">
-                  <span className="text-gray-400 block text-[11px] mb-1">Database Name</span>
+                <div className={`p-3 rounded-xl border ${
+                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
+                }`}>
+                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Database Name</span>
                   <span className="text-[#FACC15] font-mono font-bold">sahaj_ai</span>
                 </div>
-                <div className="p-3 bg-[#182030] rounded-xl border border-gray-700/60">
-                  <span className="text-gray-400 block text-[11px] mb-1">Driver</span>
-                  <span className="text-white font-mono font-semibold">PyMySQL (Pure Python)</span>
+                <div className={`p-3 rounded-xl border ${
+                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
+                }`}>
+                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Driver</span>
+                  <span className={`font-mono font-semibold ${isLight ? 'text-gray-950' : 'text-white'}`}>PyMySQL (Pure Python)</span>
                 </div>
-                <div className="p-3 bg-[#182030] rounded-xl border border-gray-700/60">
-                  <span className="text-gray-400 block text-[11px] mb-1">Connection State</span>
-                  <span className={`font-semibold ${dbConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <div className={`p-3 rounded-xl border ${
+                  isLight ? 'bg-gray-50/80 border-gray-200' : 'bg-[#182030] border-gray-700/60'
+                }`}>
+                  <span className={`block text-[11px] mb-1 ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>Connection State</span>
+                  <span className={`font-semibold ${dbConnected ? 'text-emerald-500' : 'text-amber-500'}`}>
                     {dbConnected ? '● Online & Healthy' : '○ Standby / Service Checking'}
                   </span>
                 </div>
