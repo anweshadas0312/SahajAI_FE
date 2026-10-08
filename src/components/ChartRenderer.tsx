@@ -71,7 +71,7 @@ const CustomTooltip = ({ active, payload, totalValue, isDark }: any) => {
             {name}
           </span>
         </div>
-        <div className="font-bold text-sm flex items-baseline gap-1.5" style={{ color: isDark ? '#FACC15' : '#CA8A04' }}>
+        <div className="font-bold text-sm flex items-baseline gap-1.5" style={{ color: isDark ? '#EAB308' : '#CA8A04' }}>
           <span>{val.toLocaleString()}</span>
           <span className="text-xs font-medium" style={{ color: isDark ? '#94A3B8' : '#64748B' }}>
             ({percent}%)
@@ -154,7 +154,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
   const containerBorder = isDark ? '#1f2937' : '#e5e7eb';
   const titleColor = isDark ? '#ffffff' : '#111827';
   const subtitleColor = isDark ? '#9ca3af' : '#6b7280';
-  const accentGold = isDark ? '#facc15' : '#ca8a04';
+  const accentGold = isDark ? '#EAB308' : '#ca8a04';
   const cardBg = isDark ? '#1f2937' : '#f9fafb';
   const cardBorder = isDark ? '#374151' : '#e5e7eb';
   const cardTextColor = isDark ? '#e5e7eb' : '#1f2937';

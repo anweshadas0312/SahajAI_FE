@@ -31,7 +31,7 @@ const DEFAULT_WORKSPACE_FALLBACK: Workspace = {
   user_id: 1,
   name: 'Default Workspace',
   description: 'Personal AI Workspace for exploration, code, and analysis',
-  icon_color: '#FACC15',
+  icon_color: '#EAB308',
   is_default: true,
   conversation_count: 0,
 }
@@ -209,7 +209,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [messages, currentConversationId])
 
-  const createWorkspace = async (name: string, description = '', icon_color = '#FACC15') => {
+  const createWorkspace = async (name: string, description = '', icon_color = '#EAB308') => {
     if (!user) return false
     try {
       if (token && !token.startsWith('demo_token_')) {
@@ -249,7 +249,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return true
   }
 
-  const updateWorkspace = async (id: number, name: string, description = '', icon_color = '#FACC15') => {
+  const updateWorkspace = async (id: number, name: string, description = '', icon_color = '#EAB308') => {
     if (!user) return false
     try {
       if (token && !token.startsWith('demo_token_')) {

@@ -71,7 +71,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     ctx.fillRect(0, 0, width, height)
 
     // Noise wave lines
-    const colors = ['#FACC15', '#38BDF8', '#F43F5E', '#A855F7', '#10B981', '#F59E0B']
+    const colors = ['#EAB308', '#38BDF8', '#F43F5E', '#A855F7', '#10B981', '#F59E0B']
     for (let i = 0; i < 4; i++) {
       ctx.strokeStyle = colors[i % colors.length]
       ctx.lineWidth = 1 + Math.random() * 1.2
@@ -190,10 +190,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         <button
           type="button"
           onClick={toggleTheme}
-          className="absolute top-4 left-4 p-1.5 rounded-lg text-gray-400 hover:text-[#FACC15] hover:bg-gray-800 transition cursor-pointer z-10"
+          className="absolute top-4 left-4 p-1.5 rounded-lg text-gray-400 hover:text-[#EAB308] hover:bg-gray-800 transition cursor-pointer z-10"
           title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4 text-[#FACC15]" /> : <Moon className="w-4 h-4 text-amber-500" />}
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-[#EAB308]" /> : <Moon className="w-4 h-4 text-amber-500" />}
         </button>
 
         {onClose && (
@@ -207,8 +207,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </button>
         )}
         {/* Glow accent */}
-        <div className="auth-glow-top absolute -top-16 -right-16 w-36 h-36 bg-[#FACC15]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="auth-glow-bottom absolute -bottom-16 -left-16 w-36 h-36 bg-[#FACC15]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="auth-glow-top absolute -top-16 -right-16 w-36 h-36 bg-[#EAB308]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="auth-glow-bottom absolute -bottom-16 -left-16 w-36 h-36 bg-[#EAB308]/5 rounded-full blur-3xl pointer-events-none" />
 
         {/* Header */}
         <div className="text-center mb-6">
@@ -245,7 +245,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="johndoe"
-                    className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                    className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition"
                   />
                 </div>
               </div>
@@ -260,7 +260,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="john@example.com"
-                    className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                    className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition"
                   />
                 </div>
               </div>
@@ -276,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="user@sahaj.ai"
-                  className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                  className="auth-modal-input w-full pl-10 pr-4 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition"
                 />
               </div>
             </div>
@@ -292,7 +292,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="auth-modal-input w-full pl-10 pr-10 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                className="auth-modal-input w-full pl-10 pr-10 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition"
               />
               <button
                 type="button"
@@ -313,13 +313,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="auth-modal-label flex items-center gap-1.5 text-xs font-medium text-gray-300">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#FACC15]" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[#EAB308]" />
                 <span>Security Verification</span>
               </label>
               <button
                 type="button"
                 onClick={refreshCaptcha}
-                className="flex items-center gap-1 text-[11px] text-[#FACC15] hover:underline transition cursor-pointer"
+                className="flex items-center gap-1 text-[11px] text-[#EAB308] hover:underline transition cursor-pointer"
                 title="Generate new CAPTCHA"
               >
                 <RotateCw className="w-3 h-3" />
@@ -332,7 +332,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <div
                 onClick={refreshCaptcha}
                 title="Click to refresh CAPTCHA code"
-                className="relative border border-gray-700/80 rounded-xl overflow-hidden bg-gray-950 shrink-0 shadow-inner cursor-pointer hover:border-[#FACC15]/60 transition"
+                className="relative border border-gray-700/80 rounded-xl overflow-hidden bg-gray-950 shrink-0 shadow-inner cursor-pointer hover:border-[#EAB308]/60 transition"
               >
                 <canvas
                   ref={canvasRef}
@@ -351,7 +351,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   value={captchaInput}
                   onChange={(e) => setCaptchaInput(e.target.value)}
                   placeholder="Enter 6-char code"
-                  className="auth-modal-input w-full px-3.5 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm tracking-wider uppercase font-mono focus:outline-none focus:border-[#FACC15] focus:ring-1 focus:ring-[#FACC15] transition"
+                  className="auth-modal-input w-full px-3.5 py-2.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white placeholder-gray-500 text-sm tracking-wider uppercase font-mono focus:outline-none focus:border-[#EAB308] focus:ring-1 focus:ring-[#EAB308] transition"
                 />
               </div>
             </div>
@@ -360,7 +360,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="auth-modal-submit-btn w-full mt-2 py-3 px-4 bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 font-semibold rounded-xl flex items-center justify-center gap-2 transition duration-200 shadow-lg shadow-yellow-500/20 disabled:opacity-50 cursor-pointer"
+            className="auth-modal-submit-btn w-full mt-2 py-3 px-4 bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-semibold rounded-xl flex items-center justify-center gap-2 transition duration-200 shadow-lg shadow-yellow-500/20 disabled:opacity-50 cursor-pointer"
           >
             <span>{isSubmitting ? 'Please wait...' : isRegister ? 'Sign Up' : 'Sign In'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -399,7 +399,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               setIsRegister(!isRegister)
               setError('')
             }}
-            className="auth-modal-switch-btn text-xs text-gray-400 hover:text-[#FACC15] transition cursor-pointer"
+            className="auth-modal-switch-btn text-xs text-gray-400 hover:text-[#EAB308] transition cursor-pointer"
           >
             {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Create one"}
           </button>

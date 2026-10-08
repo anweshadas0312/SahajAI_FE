@@ -68,10 +68,10 @@ export const DisclaimerPage: React.FC = () => {
           <div className="h-5 w-[1px] bg-gray-300 dark:bg-gray-700 mx-1 hidden sm:block" />
 
           <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FACC15]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#EAB308]">
               Disclaimer
             </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#EAB308]/15 text-[#EAB308] border border-[#EAB308]/30">
               Official
             </span>
           </div>
@@ -87,12 +87,12 @@ export const DisclaimerPage: React.FC = () => {
             }`}
             title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-[#FACC15]" />}
+            {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-[#EAB308]" />}
           </button>
 
           <a
             href="/"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FACC15] hover:bg-[#EAB308] text-gray-950 text-xs font-bold shadow-md shadow-yellow-500/10 transition cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 text-xs font-bold shadow-md shadow-yellow-500/10 transition cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Chat</span>
@@ -112,7 +112,7 @@ export const DisclaimerPage: React.FC = () => {
         >
           <div className="flex items-start sm:items-center justify-between gap-4 flex-wrap mb-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#FACC15]/15 border border-[#FACC15]/30 flex items-center justify-center text-[#FACC15] shrink-0 shadow-xs">
+              <div className="w-12 h-12 rounded-2xl bg-[#EAB308]/15 border border-[#EAB308]/30 flex items-center justify-center text-[#EAB308] shrink-0 shadow-xs">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
@@ -125,7 +125,7 @@ export const DisclaimerPage: React.FC = () => {
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30 self-start sm:self-auto">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#EAB308]/15 text-[#EAB308] border border-[#EAB308]/30 self-start sm:self-auto">
               sahajai.aivistatech.com
             </span>
           </div>
@@ -139,22 +139,22 @@ export const DisclaimerPage: React.FC = () => {
             }`}
           >
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#FACC15] shrink-0" />
+              <Calendar className="w-4 h-4 text-[#EAB308] shrink-0" />
               <span><strong>Last Updated:</strong> 07 October 2026</span>
             </div>
             <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-[#FACC15] shrink-0" />
+              <Globe className="w-4 h-4 text-[#EAB308] shrink-0" />
               <span><strong>Website:</strong> sahajai.aivistatech.com</span>
             </div>
             <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-[#FACC15] shrink-0" />
+              <Building2 className="w-4 h-4 text-[#EAB308] shrink-0" />
               <span><strong>Platform:</strong> SahajAI (RAG Assistance)</span>
             </div>
           </div>
 
           {/* Platform Intro Statement */}
           <div className="mt-6 space-y-3 text-xs sm:text-sm leading-relaxed">
-            <p className="font-semibold text-sm sm:text-base text-[#FACC15]">
+            <p className="font-semibold text-sm sm:text-base text-[#EAB308]">
               Platform: SahajAI – AI Chatbot, AI Assistance and Retrieval-Augmented Generation (RAG) Platform
             </p>
             <p>
@@ -208,7 +208,7 @@ export const DisclaimerPage: React.FC = () => {
               <li>suitable for a user&apos;s specific circumstances; or</li>
               <li>appropriate for professional or critical decision-making.</li>
             </ul>
-            <p className="font-semibold text-[#FACC15]">
+            <p className="font-semibold text-[#EAB308]">
               A response that appears confident should not automatically be considered correct.
             </p>
           </section>
@@ -445,7 +445,7 @@ export const DisclaimerPage: React.FC = () => {
               }`}
             >
               <div className="flex items-start gap-2.5">
-                <Building2 className="w-4 h-4 text-[#FACC15] shrink-0 mt-0.5" />
+                <Building2 className="w-4 h-4 text-[#EAB308] shrink-0 mt-0.5" />
                 <div>
                   <span className={`block font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>Organisation:</span>
                   <span className={isLight ? 'text-gray-700' : 'text-gray-300'}>Aivista Technologies Private Limited</span>
@@ -453,27 +453,27 @@ export const DisclaimerPage: React.FC = () => {
               </div>
 
               <div className="flex items-start gap-2.5">
-                <Globe className="w-4 h-4 text-[#FACC15] shrink-0 mt-0.5" />
+                <Globe className="w-4 h-4 text-[#EAB308] shrink-0 mt-0.5" />
                 <div>
                   <span className={`block font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>Website:</span>
-                  <a href="https://sahajai.aivistatech.com" target="_blank" rel="noreferrer" className="text-[#FACC15] hover:underline font-medium">
+                  <a href="https://sahajai.aivistatech.com" target="_blank" rel="noreferrer" className="text-[#EAB308] hover:underline font-medium">
                     sahajai.aivistatech.com
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <Mail className="w-4 h-4 text-[#FACC15] shrink-0 mt-0.5" />
+                <Mail className="w-4 h-4 text-[#EAB308] shrink-0 mt-0.5" />
                 <div>
                   <span className={`block font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>Email:</span>
-                  <a href="mailto:syed.arshad@aivistatech.com" className="text-[#FACC15] hover:underline font-medium">
+                  <a href="mailto:syed.arshad@aivistatech.com" className="text-[#EAB308] hover:underline font-medium">
                     syed.arshad@aivistatech.com
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-[#FACC15] shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-[#EAB308] shrink-0 mt-0.5" />
                 <div>
                   <span className={`block font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>Registered Office:</span>
                   <span className={isLight ? 'text-gray-700' : 'text-gray-300'}>Kolkata</span>
@@ -491,9 +491,9 @@ export const DisclaimerPage: React.FC = () => {
             }`}
           >
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#FACC15] shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-5 h-5 text-[#EAB308] shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-bold text-xs uppercase tracking-wider text-[#FACC15] mb-1">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-[#EAB308] mb-1">
                   Important Notice
                 </h3>
                 <p className="text-xs sm:text-sm leading-relaxed">

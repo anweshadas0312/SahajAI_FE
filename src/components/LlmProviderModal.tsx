@@ -77,7 +77,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-[#FACC15] border border-amber-500/20">
+            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-[#EAB308] border border-amber-500/20">
               <Cpu className="w-6 h-6" />
             </div>
             <div>
@@ -112,7 +112,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 onChange={e => setName(e.target.value)}
                 placeholder="Mistral Local"
                 required
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white font-medium outline-none focus:border-[#FACC15] transition"
+                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white font-medium outline-none focus:border-[#EAB308] transition"
               />
             </div>
 
@@ -127,7 +127,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 onChange={e => setProviderType(e.target.value)}
                 placeholder="Mistral"
                 required
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#FACC15] transition"
+                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
               />
             </div>
           </div>
@@ -146,7 +146,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                   onChange={e => setModelName(e.target.value)}
                   placeholder="mistral:latest"
                   required
-                  className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#FACC15] transition"
+                  className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
                 />
               </div>
             </div>
@@ -163,7 +163,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                   value={timeoutSec}
                   onChange={e => setTimeoutSec(Number(e.target.value))}
                   placeholder="600"
-                  className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#FACC15] transition"
+                  className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
                 />
               </div>
             </div>
@@ -181,7 +181,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 value={endpoint}
                 onChange={e => setEndpoint(e.target.value)}
                 placeholder="https://api.mistral.ai/v1/chat/completions"
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#FACC15] transition"
+                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
               />
             </div>
           </div>
@@ -198,7 +198,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
                 placeholder="(leave empty to keep existing)"
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-10 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#FACC15] transition"
+                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-10 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
               />
               <button
                 type="button"
