@@ -64,9 +64,11 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const data = await res.json()
         if (data.success && data.workspaces && data.workspaces.length > 0) {
           setWorkspaces(data.workspaces)
-          if (!currentWorkspace || !data.workspaces.some((w: Workspace) => w.id === currentWorkspace.id)) {
-            setCurrentWorkspace(data.workspaces[0])
-          }
+          setCurrentWorkspace((prev) => {
+            if (!prev) return data.workspaces[0]
+            const matched = data.workspaces.find((w: Workspace) => w.id === prev.id)
+            return matched || data.workspaces[0]
+          })
           setIsLoadingWorkspaces(false)
           return
         }
@@ -80,7 +82,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const stored = localStorage.getItem(localKey)
     if (stored) {
       try {
-        const parsed = JSON.parse(stored)
+        const parsed = JSON.parse(stored).map((w: Workspace) => ({
+          ...w,
+          name: w.name === 'Sahaj Workspace' ? 'Default Workspace' : w.name,
+        }))
         setWorkspaces(parsed)
         setCurrentWorkspace(parsed[0] || DEFAULT_WORKSPACE_FALLBACK)
       } catch {
