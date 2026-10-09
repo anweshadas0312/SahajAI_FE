@@ -46,6 +46,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState<boolean>(false)
   const [isLoadingConversations, setIsLoadingConversations] = useState<boolean>(false)
   const isNewConvRef = useRef<string | null>(null)
+  const activeWsIdRef = useRef<number | null>(currentWorkspace?.id || null)
+  const activeConvIdRef = useRef<string | null>(currentConversationId)
+
+  useEffect(() => {
+    activeWsIdRef.current = currentWorkspace?.id || null
+  }, [currentWorkspace?.id])
+
+  useEffect(() => {
+    activeConvIdRef.current = currentConversationId
+  }, [currentConversationId])
 
   // Fetch workspaces when user/token changes
   const fetchWorkspaces = async () => {
@@ -103,17 +113,21 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return
     }
 
+    const targetWsId = currentWorkspace.id
+
     setIsLoadingConversations(true)
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch(API_ENDPOINTS.WORKSPACES.CONVERSATIONS(currentWorkspace.id), {
+        const res = await fetch(API_ENDPOINTS.WORKSPACES.CONVERSATIONS(targetWsId), {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
           const data = await res.json()
           if (data.success) {
-            setConversations(data.conversations || [])
-            setIsLoadingConversations(false)
+            if (activeWsIdRef.current === targetWsId) {
+              setConversations(data.conversations || [])
+              setIsLoadingConversations(false)
+            }
             return
           }
         }
@@ -122,8 +136,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn('Conversations fetch note:', e)
     }
 
+    if (activeWsIdRef.current !== targetWsId) return;
+
     // LocalStorage fallback
-    const localKey = `sahaj_convs_${user.id}_${currentWorkspace.id}`
+    const localKey = `sahaj_convs_${user.id}_${targetWsId}`
     const stored = localStorage.getItem(localKey)
     if (stored) {
       try {
@@ -144,15 +160,19 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return
     }
 
+    const targetConvId = currentConversationId
+
     try {
       if (token && !token.startsWith('demo_token_')) {
-        const res = await fetch(API_ENDPOINTS.CONVERSATIONS.BY_ID(currentConversationId), {
+        const res = await fetch(API_ENDPOINTS.CONVERSATIONS.BY_ID(targetConvId), {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
           const data = await res.json()
           if (data.success && Array.isArray(data.messages)) {
-            setMessages(data.messages)
+            if (activeConvIdRef.current === targetConvId) {
+              setMessages(data.messages)
+            }
             return
           }
         }
@@ -161,8 +181,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.warn('Messages fetch note:', e)
     }
 
+    if (activeConvIdRef.current !== targetConvId) return;
+
     // Local storage fallback
-    const localKey = `sahaj_msgs_${currentConversationId}`
+    const localKey = `sahaj_msgs_${targetConvId}`
     const stored = localStorage.getItem(localKey)
     if (stored) {
       try {
@@ -189,7 +211,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setCurrentConversationId(null)
       setMessages([])
     }
-  }, [currentWorkspace?.id])
+  }, [currentWorkspace?.id, token])
 
   useEffect(() => {
     if (currentConversationId) {
