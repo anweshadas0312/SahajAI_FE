@@ -28,7 +28,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   } = useWorkspace()
 
   const [input, setInput] = useState('')
-  const [model, setModel] = useState('qwen2.5-coder:1.5b')
+  const [model] = useState('qwen2.5-coder:1.5b')
   const [jailbreak, setJailbreak] = useState('default')
   const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -41,6 +41,22 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const conversationIdRef = useRef<string>(currentConversationId || Math.random().toString(36).substring(2))
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setIsGenerating(false)
+    setMessages(prev => {
+      const last = prev[prev.length - 1]
+      if (last && last.role === 'assistant' && (!last.content || !last.content.trim())) {
+        return prev.slice(0, -1)
+      }
+      return prev
+    })
+  }
 
   useEffect(() => {
     setAttachedFiles([])
@@ -172,6 +188,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       updateConversationTitle(activeId, shortTitle)
     }
 
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     try {
       const streamToken = Math.random().toString(36).substring(2)
       const response = await fetch(API_ENDPOINTS.CONVERSATION.STREAM, {
@@ -181,6 +200,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           Accept: 'text/event-stream',
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
+        signal: controller.signal,
         body: JSON.stringify({
           conversation_id: conversationIdRef.current,
           workspace_id: currentWorkspace?.id,
@@ -227,6 +247,17 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
       }
     } catch (error: any) {
+      if (error?.name === 'AbortError' || controller.signal.aborted) {
+        console.log('Stream generation stopped by user.')
+        setMessages(prev => {
+          const last = prev[prev.length - 1]
+          if (last && last.role === 'assistant' && (!last.content || !last.content.trim())) {
+            return prev.slice(0, -1)
+          }
+          return prev
+        })
+        return
+      }
       console.error('Chat generation error:', error)
       let customNotice = '⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.'
       if (error?.message === 'GATEWAY_TIMEOUT_504') customNotice = '⚠️ **Gateway Timeout (504)**: The server took too long to process this request (especially with document/CSV analysis). The AI model or upstream Nginx server timed out. Please try again or check Nginx `proxy_read_timeout` on the server.'
@@ -245,12 +276,132 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         ]
       })
     } finally {
+      abortControllerRef.current = null
       setIsGenerating(false)
     }
   }
 
+  const handleEditAndResend = async (targetIdx: number, newPromptText: string) => {
+    setIsMobileSidebarOpen(false)
+    if (!isAuthenticated) {
+      onRequireAuth?.()
+      return
+    }
+    if (!newPromptText || isGenerating) return
+
+    const baseMessages = messages.slice(0, targetIdx)
+    const originalMsg = messages[targetIdx]
+    const updatedUserMsg = { ...originalMsg, content: newPromptText }
+
+    const newMessages = [...baseMessages, updatedUserMsg]
+    setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
+    setIsGenerating(true)
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
+    try {
+      const streamToken = Math.random().toString(36).substring(2)
+      const response = await fetch(API_ENDPOINTS.CONVERSATION.STREAM, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          conversation_id: conversationIdRef.current,
+          workspace_id: currentWorkspace?.id,
+          user_id: user?.id,
+          action: '_ask',
+          model: model,
+          jailbreak: jailbreak,
+          meta: {
+            id: streamToken,
+            file_ids: originalMsg.files ? originalMsg.files.map(f => f.id) : [],
+            content: {
+              conversation: newMessages,
+              internet_access: webAccess,
+              content_type: 'text',
+              parts: [{ content: newPromptText, role: 'user' }],
+            },
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        if (response.status === 504) throw new Error('GATEWAY_TIMEOUT_504')
+        else if (response.status === 502) throw new Error('BAD_GATEWAY_502')
+        else if (response.status === 401 || response.status === 403) throw new Error('AUTH_ERROR')
+        else throw new Error(`HTTP_ERROR_${response.status}`)
+      }
+
+      if (!response.body) throw new Error('No response body stream')
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let assistantContent = ''
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+
+        if ((assistantContent + chunk).trim().toLowerCase().startsWith('<html') ||
+          (assistantContent + chunk).trim().toLowerCase().startsWith('<!doctype')) {
+          throw new Error('GATEWAY_TIMEOUT_504')
+        }
+
+        assistantContent += chunk
+        setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+      }
+    } catch (error: any) {
+      if (error?.name === 'AbortError' || controller.signal.aborted) {
+        console.log('Stream generation stopped by user.')
+        setMessages(prev => {
+          const last = prev[prev.length - 1]
+          if (last && last.role === 'assistant' && (!last.content || !last.content.trim())) {
+            return prev.slice(0, -1)
+          }
+          return prev
+        })
+        return
+      }
+      console.error('Chat generation error:', error)
+      let customNotice = '⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.'
+      if (error?.message === 'GATEWAY_TIMEOUT_504') customNotice = '⚠️ **Gateway Timeout (504)**: The server took too long to process this request (especially with document/CSV analysis). The AI model or upstream Nginx server timed out. Please try again or check Nginx `proxy_read_timeout` on the server.'
+      else if (error?.message === 'BAD_GATEWAY_502') customNotice = '⚠️ **Bad Gateway (502)**: The AI backend service is currently offline or unreachable.'
+      else if (error?.message === 'AUTH_ERROR') customNotice = '⚠️ **Authentication Required**: Your session has expired. Please log in again.'
+      else if (error?.message?.startsWith('HTTP_ERROR_')) customNotice = `⚠️ **Server Error (${error.message.replace('HTTP_ERROR_', '')})**: The server encountered an issue processing your request.`
+
+      setMessages(prev => {
+        const last = prev[prev.length - 1]
+        return [
+          ...prev.slice(0, -1),
+          {
+            ...last,
+            content: (last && !last.content.trim().toLowerCase().startsWith('<html') ? last.content : '') + `\n\n> ${customNotice}`,
+          },
+        ]
+      })
+    } finally {
+      abortControllerRef.current = null
+      setIsGenerating(false)
+    }
+  }
+
+  const handleRegenerate = (assistantIdx: number) => {
+    let promptIdx = assistantIdx - 1
+    while (promptIdx >= 0 && messages[promptIdx].role !== 'user') {
+      promptIdx--
+    }
+    if (promptIdx >= 0 && messages[promptIdx].content) {
+      handleEditAndResend(promptIdx, messages[promptIdx].content)
+    }
+  }
+
   return (
-    <div className={`flex h-full font-sans overflow-hidden transition-colors pb-[72px] md:pb-0 ${isLight ? 'bg-[#f8fafc] text-gray-900' : 'bg-[#0b0f19] text-gray-100'
+    <div className={`flex h-full font-sans overflow-hidden transition-colors pb-[72px] md:pb-0 ${isLight ? 'bg-[#f8fafc] text-gray-900' : 'bg-[#0b0f19]'
       }`}>
 
       <Sidebar
@@ -282,12 +433,15 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           copiedIndex={copiedIndex}
           handleCopyCode={handleCopyCode}
           bottomRef={bottomRef}
+          handleEditAndResend={handleEditAndResend}
+          handleRegenerate={handleRegenerate}
         />
 
         <ChatInput
           input={input}
           setInput={setInput}
           handleSend={handleSend}
+          handleStopGeneration={handleStopGeneration}
           attachedFiles={attachedFiles}
           isUploadingFile={isUploadingFile}
           fileInputRef={fileInputRef}

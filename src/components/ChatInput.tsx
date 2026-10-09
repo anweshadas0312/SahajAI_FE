@@ -1,5 +1,5 @@
 import React from 'react'
-import { Paperclip, Send, Loader2, X, FileText, Maximize2, Minimize2 } from 'lucide-react'
+import { Paperclip, Send, Loader2, X, FileText, Maximize2, Minimize2, Square } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import type { UploadedFile } from '../types'
@@ -8,9 +8,10 @@ interface ChatInputProps {
   input: string
   setInput: (val: string) => void
   handleSend: () => void
+  handleStopGeneration?: () => void
   attachedFiles: UploadedFile[]
   isUploadingFile: boolean
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleRemoveFile: (fileId: string) => void
   isGenerating: boolean
@@ -21,6 +22,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   input,
   setInput,
   handleSend,
+  handleStopGeneration,
   attachedFiles,
   isUploadingFile,
   fileInputRef,
@@ -159,20 +161,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             disabled={isGenerating}
           />
 
-          <button
-            type="button"
-            onClick={() => {
-              if (!isAuthenticated) {
-                onRequireAuth?.()
-                return
-              }
-              handleSend()
-            }}
-            disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isGenerating || isUploadingFile)}
-            className="absolute bottom-1.5 sm:bottom-2 right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#EAB308] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
-          >
-            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+          {isGenerating ? (
+            <button
+              type="button"
+              onClick={handleStopGeneration}
+              className="absolute bottom-1.5 sm:bottom-2 right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#EAB308] hover:bg-amber-400 text-gray-950 font-bold rounded-lg sm:rounded-xl transition-all duration-300 cursor-pointer animate-stop-wave hover:scale-110 active:scale-90 shrink-0 flex items-center justify-center z-10"
+              title="Stop generating"
+            >
+              <Square className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-gray-950" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (!isAuthenticated) {
+                  onRequireAuth?.()
+                  return
+                }
+                handleSend()
+              }}
+              disabled={isAuthenticated && ((!input.trim() && attachedFiles.length === 0) || isUploadingFile)}
+              className="absolute bottom-1.5 sm:bottom-2 right-1.5 sm:right-2.5 p-2 sm:p-2.5 bg-[#EAB308] hover:bg-[#EAB308] text-gray-950 font-bold rounded-lg sm:rounded-xl transition duration-150 disabled:opacity-30 disabled:hover:bg-[#EAB308] cursor-pointer shadow-md shadow-yellow-500/20 shrink-0"
+              title="Send message"
+            >
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+          )}
 
           {showExpand && (
             <button

@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowRight, BookOpen, Sparkles, PenTool, Lightbulb, FileText, ExternalLink, Copy, Check } from 'lucide-react'
+import { ArrowRight, BookOpen, Sparkles, PenTool, Lightbulb, FileText, ExternalLink, Copy, Check, Pencil, RotateCw } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ThinkingBulb } from './ThinkingBulb'
@@ -104,7 +104,10 @@ interface MessageListProps {
   handleSend: (prompt?: string) => void
   copiedIndex: number | null
   handleCopyCode: (code: string, idx: number) => void
-  bottomRef: React.RefObject<HTMLDivElement>
+  bottomRef: React.RefObject<HTMLDivElement | null>
+  onEditPrompt?: (prompt: string) => void
+  handleEditAndResend?: (targetIdx: number, newPromptText: string) => void
+  handleRegenerate?: (assistantIdx: number) => void
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -113,11 +116,16 @@ export const MessageList: React.FC<MessageListProps> = ({
   copiedIndex,
   handleCopyCode,
   bottomRef,
+  handleEditAndResend,
+  handleRegenerate,
 }) => {
   const { user } = useAuth()
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const { messages } = useWorkspace()
+
+  const [editingIdx, setEditingIdx] = React.useState<number | null>(null)
+  const [editingText, setEditingText] = React.useState<string>('')
 
   return (
     <div className={`${messages.length === 0 && !isGenerating
@@ -195,153 +203,264 @@ export const MessageList: React.FC<MessageListProps> = ({
       ) : (
         <div className="max-w-3xl w-full mx-auto space-y-4 sm:space-y-6">
           {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex gap-2 sm:gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              {msg.role !== 'user' && (
-                <div className="shrink-0 pt-0.5">
-                  <ThinkingBulb
-                    state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
-                    size={32}
-                  />
-                </div>
-              )}
-
-              <div
-                className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
-                  ? isLight
-                    ? 'bg-[#EAB308] text-gray-950 border border-amber-500/40 rounded-tr-none font-medium'
-                    : 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
-                  : isLight
-                    ? 'bg-white text-gray-900 border border-gray-200 rounded-tl-none prose shadow-sm max-w-none'
-                    : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
-                  }`}
-              >
-                {msg.role === 'user' ? (
-                  <div className="space-y-2">
-                    {msg.files && msg.files.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        {msg.files.map(f => (
-                          <a
-                            key={f.id}
-                            href={`/api/files/${f.id}/view`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs hover:underline transition cursor-pointer group ${isLight
-                              ? 'bg-amber-50/80 border-amber-300 text-amber-900 hover:border-amber-400'
-                              : 'bg-[#141a27] border-gray-700 hover:border-[#EAB308] text-[#EAB308]'
-                              }`}
-                            title="Click to view file"
-                          >
-                            <FileText className={`w-3.5 h-3.5 ${isLight ? 'text-amber-800' : 'text-[#EAB308]'}`} />
-                            <span className="font-medium">{f.original_name}</span>
-                            <ExternalLink className={`w-3 h-3 ${isLight ? 'text-amber-700' : 'text-gray-400 group-hover:text-[#EAB308]'}`} />
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                    {!msg.isAutoPrompt && (
-                      <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{msg.content}</p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
-                    {msg.content ? (
-                      <>
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            a: ({ node, href, children, ...props }) => (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-amber-600 dark:text-[#EAB308] hover:text-amber-700 dark:hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
-                                {...props}
-                              >
-                                <span>{children}</span>
-                                <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
-                              </a>
-                            ),
-                            code: ({ node, inline, className, children, ...props }: any) => {
-                              const match = /language-(\w+)/.exec(className || '');
-                              const lang = match ? match[1].toLowerCase() : '';
-                              const rawContent = String(children).replace(/\n$/, '').trim();
-
-                              if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
-                                try {
-                                  const parsed = JSON.parse(rawContent);
-                                  if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
-                                    if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
-                                      parsed.type = lang;
-                                    }
-                                    if (Array.isArray(parsed.data) && parsed.data.length > 0) {
-                                      return <ChartRenderer dataPayload={parsed} />;
-                                    }
-                                  }
-                                } catch (e) {
-                                  // Not valid JSON chart data, fallback to normal code block
-                                }
-                              }
-
-                              if (inline) {
-                                return (
-                                  <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
-                                    {children}
-                                  </code>
-                                );
-                              }
-                              return (
-                                <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
-                                  <code>{children}</code>
-                                </pre>
-                              );
-                            },
-                          }}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
-
-                        {/* Fallback chart extractor if model wrote text breakdown without ```chart block */}
-                        {(() => {
-                          const fallbackChart = extractChartFromText(msg.content)
-                          return fallbackChart ? <ChartRenderer dataPayload={fallbackChart} /> : null
-                        })()}
-                      </>
-                    ) : (
-                      <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
-                        <span></span><span></span><span></span>
-                      </span>
-                    )}
-                    {msg.content && (
-                      <div className="flex justify-end pt-2">
+            <div key={idx}>
+              {msg.role === 'user' ? (
+                editingIdx === idx ? (
+                  /* Inline Prompt Edit Box */
+                  <div className="flex flex-col items-end w-full my-2">
+                    <div
+                      className={`w-full max-w-[88%] sm:max-w-[82%] mr-9 sm:mr-11 rounded-2xl p-4 border shadow-lg flex flex-col gap-3 transition-colors ${isLight
+                        ? 'bg-[#f3f4f6] border-gray-300 text-gray-950'
+                        : 'bg-[#182030] border-gray-700 text-white'
+                        }`}
+                    >
+                      <textarea
+                        value={editingText}
+                        onChange={e => setEditingText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            if (editingText.trim() && handleEditAndResend) {
+                              const textToSubmit = editingText.trim()
+                              setEditingIdx(null)
+                              handleEditAndResend(idx, textToSubmit)
+                            }
+                          }
+                        }}
+                        rows={Math.max(2, editingText.split('\n').length)}
+                        className={`w-full bg-transparent outline-none resize-none text-xs sm:text-sm leading-relaxed ${isLight ? 'text-gray-950 placeholder-gray-400' : 'text-white placeholder-gray-500'
+                          }`}
+                        autoFocus
+                      />
+                      <div className="flex items-center justify-end gap-2 pt-1">
                         <button
-                          onClick={() => handleCopyCode(msg.content, idx)}
-                          className={`flex items-center gap-1.5 text-[11px] transition cursor-pointer ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#EAB308]'
+                          type="button"
+                          onClick={() => setEditingIdx(null)}
+                          className={`px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer border ${isLight
+                            ? 'bg-white border-gray-300 text-gray-800 hover:bg-gray-100'
+                            : 'bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700'
                             }`}
                         >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (editingText.trim() && handleEditAndResend) {
+                              const textToSubmit = editingText.trim()
+                              setEditingIdx(null)
+                              handleEditAndResend(idx, textToSubmit)
+                            }
+                          }}
+                          disabled={!editingText.trim() || isGenerating}
+                          className="px-4 py-1.5 rounded-full text-xs font-bold bg-black text-white dark:bg-black dark:text-white hover:bg-gray-900 transition cursor-pointer disabled:opacity-40 shadow-sm"
+                        >
+                          Send
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Normal User Message Bubble */
+                  <div className="flex flex-col items-end group">
+                    {/* User Message Bubble + Avatar */}
+                    <div className="flex items-start justify-end gap-2 sm:gap-3.5 w-full">
+                      <div
+                        className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${isLight
+                          ? 'bg-[#EAB308] text-gray-950 border border-amber-500/40 rounded-tr-none font-medium'
+                          : 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
+                          }`}
+                      >
+                        {msg.files && msg.files.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {msg.files.map(f => (
+                              <a
+                                key={f.id}
+                                href={`/api/files/${f.id}/view`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs hover:underline transition cursor-pointer group/file ${isLight
+                                  ? 'bg-amber-50/80 border-amber-300 text-amber-900 hover:border-amber-400'
+                                  : 'bg-[#141a27] border-gray-700 hover:border-[#EAB308] text-[#EAB308]'
+                                  }`}
+                                title="Click to view file"
+                              >
+                                <FileText className={`w-3.5 h-3.5 ${isLight ? 'text-amber-800' : 'text-[#EAB308]'}`} />
+                                <span className="font-medium">{f.original_name}</span>
+                                <ExternalLink className={`w-3 h-3 ${isLight ? 'text-amber-700' : 'text-gray-400 group-hover/file:text-[#EAB308]'}`} />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                        {!msg.isAutoPrompt && (
+                          <p className="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed">{msg.content}</p>
+                        )}
+                      </div>
+
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-[#EAB308] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-500/40 uppercase">
+                        {user?.username ? user.username[0] : 'U'}
+                      </div>
+                    </div>
+
+                    {/* Outside Action Buttons (Below Prompt Bubble, Aligned Right) */}
+                    {msg.content && (
+                      <div className="flex items-center gap-1 mt-1 pr-9 sm:pr-11 opacity-0 group-hover:opacity-100 transition-opacity duration-200 select-none">
+                        {/* Copy Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCode(msg.content, idx)}
+                          className={`p-1.5 rounded-lg transition cursor-pointer ${isLight
+                            ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/80'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                            }`}
+                          title="Copy prompt"
+                        >
                           {copiedIndex === idx ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="text-emerald-500">Copied</span>
-                            </>
+                            <Check className={`w-3.5 h-3.5 ${isLight ? 'text-gray-950' : 'text-white'}`} />
                           ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Copy</span>
-                            </>
+                            <Copy className="w-3.5 h-3.5" />
                           )}
+                        </button>
+
+                        {/* Edit Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingIdx(idx)
+                            setEditingText(msg.content)
+                          }}
+                          className={`p-1.5 rounded-lg transition cursor-pointer ${isLight
+                            ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/80'
+                            : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                            }`}
+                          title="Edit prompt"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     )}
                   </div>
-                )}
-              </div>
+                )
+              ) : (
+                /* Assistant Message Row */
+                <div className="flex gap-2 sm:gap-3.5 justify-start">
+                  <div className="shrink-0 pt-0.5">
+                    <ThinkingBulb
+                      state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
+                      size={32}
+                    />
+                  </div>
 
-              {msg.role === 'user' && (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-[#EAB308] text-gray-950 flex items-center justify-center shrink-0 text-[10px] sm:text-xs font-black shadow-sm border border-yellow-500/40 uppercase">
-                  {user?.username ? user.username[0] : 'U'}
+                  <div
+                    className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${isLight
+                      ? 'bg-white text-gray-900 border border-gray-200 rounded-tl-none prose shadow-sm max-w-none'
+                      : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
+                      }`}
+                  >
+                    <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
+                      {msg.content ? (
+                        <>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ node, href, children, ...props }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-amber-600 dark:text-[#EAB308] hover:text-amber-700 dark:hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                  {...props}
+                                >
+                                  <span>{children}</span>
+                                  <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                                </a>
+                              ),
+                              code: ({ node, inline, className, children, ...props }: any) => {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const lang = match ? match[1].toLowerCase() : '';
+                                const rawContent = String(children).replace(/\n$/, '').trim();
+
+                                if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
+                                  try {
+                                    const parsed = JSON.parse(rawContent);
+                                    if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
+                                      if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
+                                        parsed.type = lang;
+                                      }
+                                      if (Array.isArray(parsed.data) && parsed.data.length > 0) {
+                                        return <ChartRenderer dataPayload={parsed} />;
+                                      }
+                                    }
+                                  } catch (e) {
+                                    // Not valid JSON chart data, fallback to normal code block
+                                  }
+                                }
+
+                                if (inline) {
+                                  return (
+                                    <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                }
+                                return (
+                                  <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
+                                    <code>{children}</code>
+                                  </pre>
+                                );
+                              },
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+
+                          {/* Fallback chart extractor if model wrote text breakdown without ```chart block */}
+                          {(() => {
+                            const fallbackChart = extractChartFromText(msg.content)
+                            return fallbackChart ? <ChartRenderer dataPayload={fallbackChart} /> : null
+                          })()}
+                        </>
+                      ) : (
+                        <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
+                          <span></span><span></span><span></span>
+                        </span>
+                      )}
+                      {msg.content && (
+                        <div className="flex justify-end items-center gap-3 pt-2">
+                          {handleRegenerate && (
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerate(idx)}
+                              disabled={isGenerating}
+                              className={`flex items-center gap-1.5 text-[11px] transition cursor-pointer disabled:opacity-40 ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#EAB308]'
+                                }`}
+                              title="Try again / Regenerate response"
+                            >
+                              <RotateCw className={`w-3.5 h-3.5 ${isGenerating && idx === messages.length - 1 ? 'animate-spin' : ''}`} />
+                              <span>Try Again</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleCopyCode(msg.content, idx)}
+                            className={`flex items-center gap-1.5 text-[11px] transition cursor-pointer ${isLight ? 'text-gray-400 hover:text-amber-600' : 'text-gray-400 hover:text-[#EAB308]'
+                              }`}
+                          >
+                            {copiedIndex === idx ? (
+                              <>
+                                <Check className={`w-3.5 h-3.5 ${isLight ? 'text-gray-950' : 'text-white'}`} />
+                                <span className={isLight ? 'text-gray-950 font-bold' : 'text-white font-bold'}>Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
