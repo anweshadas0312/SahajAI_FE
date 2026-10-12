@@ -104,7 +104,7 @@ interface MessageListProps {
   handleSend: (prompt?: string) => void
   copiedIndex: number | null
   handleCopyCode: (code: string, idx: number) => void
-  bottomRef: React.RefObject<HTMLDivElement>
+  bottomRef: React.RefObject<HTMLDivElement | null>
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -120,9 +120,9 @@ export const MessageList: React.FC<MessageListProps> = ({
   const { messages } = useWorkspace()
 
   return (
-    <div className={`${messages.length === 0 && !isGenerating
-      ? 'flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 flex flex-col'
-      : 'flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 flex flex-col'
+    <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden ${messages.length === 0 && !isGenerating
+      ? 'p-2 sm:p-4 flex flex-col'
+      : 'p-3 sm:p-6 flex flex-col'
       }`}>
       {messages.length === 0 && !isGenerating ? (
         <div className="max-w-3xl mx-auto w-full flex flex-col items-center sm:my-auto py-6 sm:py-8 px-2 sm:px-4 shrink-0 pb-[100px]">
@@ -197,7 +197,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex gap-2 sm:gap-3.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-2 sm:gap-3.5 w-full min-w-0 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role !== 'user' && (
                 <div className="shrink-0 pt-0.5">
@@ -209,13 +209,17 @@ export const MessageList: React.FC<MessageListProps> = ({
               )}
 
               <div
-                className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
+                className={`min-w-0 rounded-2xl p-3.5 sm:p-4.5 break-words ${msg.role === 'user'
                   ? isLight
-                    ? 'bg-[#EAB308] text-gray-950 border border-amber-500/40 rounded-tr-none font-medium'
-                    : 'bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
-                  : isLight
-                    ? 'bg-white text-gray-900 border border-gray-200 rounded-tl-none prose shadow-sm max-w-none'
-                    : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
+                    ? 'max-w-[88%] sm:max-w-[82%] bg-[#EAB308] text-gray-950 border border-amber-500/40 rounded-tr-none font-medium'
+                    : 'max-w-[88%] sm:max-w-[82%] bg-[#1c2436] text-white border border-gray-700/80 rounded-tr-none'
+                  // : !msg.content
+                  //   ? isLight
+                  //     ? 'w-fit bg-white text-gray-900 border border-gray-200 rounded-tl-none shadow-sm'
+                  //     : 'w-fit bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none'
+                    : isLight
+                      ? ' bg-white text-gray-900 border border-gray-200 rounded-tl-none shadow-sm'
+                      : ' bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none'
                   }`}
               >
                 {msg.role === 'user' ? (
@@ -246,12 +250,17 @@ export const MessageList: React.FC<MessageListProps> = ({
                     )}
                   </div>
                 ) : (
-                  <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
+                  <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2 min-w-0 overflow-hidden break-words">
                     {msg.content ? (
                       <>
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
+                            p: ({ node, children, ...props }) => (
+                              <p className="break-words leading-relaxed my-1.5" {...props}>
+                                {children}
+                              </p>
+                            ),
                             a: ({ node, href, children, ...props }) => (
                               <a
                                 href={href}
@@ -264,38 +273,60 @@ export const MessageList: React.FC<MessageListProps> = ({
                                 <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
                               </a>
                             ),
+                            table: ({ node, children, ...props }) => (
+                              <div className="overflow-x-auto max-w-full my-3 border border-gray-800 rounded-lg">
+                                <table className="min-w-full text-left text-xs divide-y divide-gray-800" {...props}>
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            pre: ({ node, children, ...props }: any) => (
+                              <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto max-w-full text-xs font-mono my-2 text-gray-200" {...props}>
+                                {children}
+                              </pre>
+                            ),
                             code: ({ node, inline, className, children, ...props }: any) => {
                               const match = /language-(\w+)/.exec(className || '');
                               const lang = match ? match[1].toLowerCase() : '';
                               const rawContent = String(children).replace(/\n$/, '').trim();
 
-                              if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
+                              const isChartLang = lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line';
+
+                              if (isChartLang || lang === 'json' || !lang) {
                                 try {
                                   const parsed = JSON.parse(rawContent);
                                   if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
-                                    if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
-                                      parsed.type = lang;
+                                    if (!parsed.type && isChartLang) {
+                                      parsed.type = lang === 'chart' ? 'bar' : lang;
                                     }
                                     if (Array.isArray(parsed.data) && parsed.data.length > 0) {
                                       return <ChartRenderer dataPayload={parsed} />;
                                     }
                                   }
                                 } catch (e) {
-                                  // Not valid JSON chart data, fallback to normal code block
+                                  // Not valid JSON chart data, fallback to normal code block or skeleton
+                                  if (isChartLang) {
+                                    return (
+                                      <div className="h-64 sm:h-80 w-full bg-[#141a27] border border-[#232d3f] rounded-lg flex flex-col items-center justify-center animate-pulse my-4">
+                                        <div className="w-8 h-8 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-3"></div>
+                                        <span className="text-gray-400 text-xs font-mono">Building Chart...</span>
+                                      </div>
+                                    );
+                                  }
                                 }
                               }
 
                               if (inline) {
                                 return (
-                                  <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                  <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs break-all" {...props}>
                                     {children}
                                   </code>
                                 );
                               }
                               return (
-                                <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
-                                  <code>{children}</code>
-                                </pre>
+                                <code className="block w-fit min-w-full font-mono text-xs" {...props}>
+                                  {children}
+                                </code>
                               );
                             },
                           }}
@@ -305,6 +336,9 @@ export const MessageList: React.FC<MessageListProps> = ({
 
                         {/* Fallback chart extractor if model wrote text breakdown without ```chart block */}
                         {(() => {
+                          const isCurrentGenerating = isGenerating && idx === messages.length - 1
+                          if (isCurrentGenerating) return null // Prevent layout thrashing during generation
+
                           const fallbackChart = extractChartFromText(msg.content)
                           return fallbackChart ? <ChartRenderer dataPayload={fallbackChart} /> : null
                         })()}

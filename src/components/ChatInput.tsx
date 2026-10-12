@@ -10,7 +10,7 @@ interface ChatInputProps {
   handleSend: () => void
   attachedFiles: UploadedFile[]
   isUploadingFile: boolean
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleRemoveFile: (fileId: string) => void
   isGenerating: boolean

@@ -170,10 +170,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (res.ok) {
           const data = await res.json()
           if (data.success && Array.isArray(data.messages)) {
-            if (activeConvIdRef.current === targetConvId) {
+            const isGenerating = localStorage.getItem(`sahaj_active_stream_${targetConvId}`) === 'true'
+            if (!isGenerating && activeConvIdRef.current === targetConvId) {
               setMessages(data.messages)
             }
-            return
+            if (!isGenerating) {
+              return
+            }
           }
         }
       }

@@ -28,7 +28,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   } = useWorkspace()
 
   const [input, setInput] = useState('')
-  const [model, setModel] = useState('qwen2.5-coder:1.5b')
+  const [model] = useState('qwen2.5-coder:1.5b')
   const [jailbreak, setJailbreak] = useState('default')
   const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -121,8 +121,16 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   }, [messages])
 
   useEffect(() => {
+    conversationIdRef.current = currentConversationId || ''
     if (currentConversationId) {
-      conversationIdRef.current = currentConversationId
+      // Ensure UI knows whether the newly focused chat is still generating
+      if (localStorage.getItem(`sahaj_active_stream_${currentConversationId}`) === 'true') {
+        setIsGenerating(true)
+      } else {
+        setIsGenerating(false)
+      }
+    } else {
+      setIsGenerating(false)
     }
   }, [currentConversationId])
 
@@ -171,6 +179,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     } else if (messages.length === 0 && activeId) {
       updateConversationTitle(activeId, shortTitle)
     }
+
+    const targetConversationId = activeId
+    localStorage.setItem(`sahaj_active_stream_${targetConversationId}`, 'true')
 
     try {
       const streamToken = Math.random().toString(36).substring(2)
@@ -224,9 +235,21 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         }
 
         assistantContent += chunk
-        setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+        const updatedMessages = [...newMessages, { role: 'assistant' as const, content: assistantContent }]
+        
+        // Save to local storage for background persistence
+        localStorage.setItem(`sahaj_msgs_${targetConversationId}`, JSON.stringify(updatedMessages))
+
+        // Update UI only if the user is still on this conversation
+        if (conversationIdRef.current === targetConversationId) {
+          setMessages(updatedMessages)
+        }
       }
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Chat generation aborted')
+        return
+      }
       console.error('Chat generation error:', error)
       let customNotice = '⚠️ **Service Notice**: Backend stream did not respond. Check your LLM host endpoint or model status.'
       if (error?.message === 'GATEWAY_TIMEOUT_504') customNotice = '⚠️ **Gateway Timeout (504)**: The server took too long to process this request (especially with document/CSV analysis). The AI model or upstream Nginx server timed out. Please try again or check Nginx `proxy_read_timeout` on the server.'
@@ -234,18 +257,23 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       else if (error?.message === 'AUTH_ERROR') customNotice = '⚠️ **Authentication Required**: Your session has expired. Please log in again.'
       else if (error?.message?.startsWith('HTTP_ERROR_')) customNotice = `⚠️ **Server Error (${error.message.replace('HTTP_ERROR_', '')})**: The server encountered an issue processing your request.`
 
-      setMessages(prev => {
-        const last = prev[prev.length - 1]
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            content: (last && !last.content.trim().toLowerCase().startsWith('<html') ? last.content : '') + `\n\n> ${customNotice}`,
-          },
-        ]
-      })
+      const errorMessages = [
+        ...newMessages,
+        {
+          role: 'assistant' as const,
+          content: `\n\n> ${customNotice}`,
+        },
+      ]
+      localStorage.setItem(`sahaj_msgs_${targetConversationId}`, JSON.stringify(errorMessages))
+
+      if (conversationIdRef.current === targetConversationId) {
+        setMessages(errorMessages)
+      }
     } finally {
-      setIsGenerating(false)
+      localStorage.removeItem(`sahaj_active_stream_${targetConversationId}`)
+      if (conversationIdRef.current === targetConversationId) {
+        setIsGenerating(false)
+      }
     }
   }
 
