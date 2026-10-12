@@ -8,65 +8,6 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 
-// Fallback helper to extract chart data if AI model outputs text bullet points, tables, or prose instead of ```chart codeblock
-const extractChartFromText = (text: string) => {
-  if (!text || text.includes('```chart')) return null
-
-  const lower = text.toLowerCase()
-  const lines = text.split('\n')
-  const items: { name: string; value: number }[] = []
-
-  for (const line of lines) {
-    const cleanLine = line.replace(/[\*\_\`]/g, '').trim()
-    if (!cleanLine) continue
-
-    // Pattern 1: Table row | Gold | 22956 | or | Gold | $22,956 |
-    if (cleanLine.startsWith('|') && cleanLine.endsWith('|')) {
-      const cells = cleanLine.split('|').map(c => c.trim()).filter(Boolean)
-      if (cells.length >= 2) {
-        const nameCandidate = cells[0]
-        const valCandidate = parseFloat(cells[1].replace(/[\$,]/g, ''))
-        if (nameCandidate && !isNaN(valCandidate) && valCandidate > 0) {
-          const lowerC = nameCandidate.toLowerCase()
-          const isMeta = ['category', 'item', 'metal', 'type', 'name', '---', 'header', 'label', 'parameter', 'id'].some(k => lowerC.includes(k))
-          if (!isMeta) {
-            if (!items.some(it => it.name.toLowerCase() === lowerC)) {
-              items.push({ name: nameCandidate, value: valCandidate })
-            }
-          }
-        }
-      }
-      continue
-    }
-
-    // Pattern 2: Key-value lines: "Gold: 22,956" or "• Gold: 48.9%" or "Gold - $22,956"
-    const match = cleanLine.match(/^[-*•\d\.\)]*\s*([A-Za-z0-9\s\-\/]+?)[:=]\s*(?:[^0-9\n]*?)\$?([0-9]+(?:[\.,][0-9]+)?)%?/i)
-    if (match) {
-      const rawName = match[1].trim()
-      const rawVal = parseFloat(match[2].replace(/,/g, ''))
-      if (rawName && !isNaN(rawVal) && rawVal > 0) {
-        const lowerName = rawName.toLowerCase()
-        const isMeta = ['date range', 'metal types', 'order number', 'total sales', 'explanation', 'most sold metals', 'average cost', 'item types', 'pie chart', 'bar chart', 'summary', 'key topics', 'data table', 'chart title', 'subtitle', 'price level', 'order count'].some(k => lowerName.includes(k))
-        if (!isMeta) {
-          if (!items.some(it => it.name.toLowerCase() === lowerName)) {
-            items.push({ name: rawName, value: rawVal })
-          }
-        }
-      }
-    }
-  }
-
-  if (items.length >= 2) {
-    const chartType = lower.includes('bar chart') ? 'bar' : 'pie'
-    return {
-      type: chartType,
-      title: chartType === 'bar' ? 'Bar Chart Visualization' : 'Pie Chart Breakdown',
-      data: items,
-    }
-  }
-
-  return null
-}
 
 const starterPrompts = [
   {
@@ -101,6 +42,7 @@ const starterPrompts = [
 
 interface MessageListProps {
   isGenerating: boolean
+  loadingStatus?: string
   handleSend: (prompt?: string) => void
   copiedIndex: number | null
   handleCopyCode: (code: string, idx: number) => void
@@ -112,6 +54,7 @@ interface MessageListProps {
 
 export const MessageList: React.FC<MessageListProps> = ({
   isGenerating,
+  loadingStatus = 'Thinking...',
   handleSend,
   copiedIndex,
   handleCopyCode,
@@ -343,89 +286,111 @@ export const MessageList: React.FC<MessageListProps> = ({
                 )
               ) : (
                 /* Assistant Message Row */
-                <div className="flex gap-2 sm:gap-3.5 justify-start">
-                  <div className="shrink-0 pt-0.5">
+                <div className="w-full flex flex-col items-start group">
+                  {/* Assistant Header with Bulb & Status */}
+                  <div className="flex items-center gap-2.5 mb-1.5 pl-1">
                     <ThinkingBulb
                       state={isGenerating && idx === messages.length - 1 ? 'thinking' : 'lit'}
-                      size={32}
+                      size={26}
                     />
+                    {isGenerating && idx === messages.length - 1 && !msg.content && (
+                      <div
+                        className={`text-xs sm:text-sm font-medium tracking-wide flex items-center select-none ${isLight ? 'text-gray-500' : 'text-gray-400'
+                          }`}
+                        aria-live="polite"
+                        aria-label={loadingStatus || 'Thinking'}
+                      >
+                        <span
+                          key={(loadingStatus || 'Thinking...').replace(/\.+$/, '').trim() || 'Thinking'}
+                          className="sahaj-status-fade sahaj-thinking-text"
+                        >
+                          {(loadingStatus || 'Thinking...').replace(/\.+$/, '').trim() || 'Thinking'}
+                        </span>
+                        <span className="sahaj-thinking-dots" aria-hidden="true">
+                          <span className="sahaj-dot dot-1">.</span>
+                          <span className="sahaj-dot dot-2">.</span>
+                          <span className="sahaj-dot dot-3">.</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <div
-                    className={`max-w-[88%] sm:max-w-[82%] rounded-2xl p-3.5 sm:p-4.5 break-words ${isLight
-                      ? 'bg-white text-gray-900 border border-gray-200 rounded-tl-none prose shadow-sm max-w-none'
-                      : 'bg-[#141a27] text-gray-200 border border-gray-800 rounded-tl-none prose prose-invert max-w-none'
-                      }`}
-                  >
-                    <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2">
-                      {msg.content ? (
-                        <>
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              a: ({ node, href, children, ...props }) => (
-                                <a
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-amber-600 dark:text-[#EAB308] hover:text-amber-700 dark:hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
-                                  {...props}
-                                >
-                                  <span>{children}</span>
-                                  <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
-                                </a>
-                              ),
-                              code: ({ node, inline, className, children, ...props }: any) => {
-                                const match = /language-(\w+)/.exec(className || '');
-                                const lang = match ? match[1].toLowerCase() : '';
-                                const rawContent = String(children).replace(/\n$/, '').trim();
+                  {msg.content ? (
+                    <div
+                      className={`w-full rounded-2xl p-4 sm:p-5 break-words transition-all ${isLight
+                        ? 'bg-white text-gray-900 border border-gray-200 shadow-sm'
+                        : 'bg-[#141a27] text-gray-200 border border-gray-800'
+                        }`}
+                    >
+                      <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2 prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            a: ({ node, href, children, ...props }) => (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-amber-600 dark:text-[#EAB308] hover:text-amber-700 dark:hover:text-[#EAB308] underline underline-offset-3 font-semibold break-all inline-flex items-center gap-1 cursor-pointer transition hover:opacity-90"
+                                {...props}
+                              >
+                                <span>{children}</span>
+                                <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
+                              </a>
+                            ),
+                            code: ({ node, inline, className, children, ...props }: any) => {
+                              const match = /language-(\w+)/.exec(className || '');
+                              const lang = match ? match[1].toLowerCase() : '';
+                              const rawContent = String(children).replace(/\n$/, '').trim();
 
-                                if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line' || lang === 'json' || !lang) {
-                                  try {
-                                    const parsed = JSON.parse(rawContent);
-                                    if (parsed && (Array.isArray(parsed.data) || parsed.type || parsed.title)) {
-                                      if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
-                                        parsed.type = lang;
-                                      }
-                                      if (Array.isArray(parsed.data) && parsed.data.length > 0) {
-                                        return <ChartRenderer dataPayload={parsed} />;
-                                      }
+                              if (lang === 'chart' || lang === 'pie' || lang === 'bar' || lang === 'line') {
+                                try {
+                                  const parsed = JSON.parse(rawContent);
+                                  if (parsed && typeof parsed === 'object') {
+                                    if (!parsed.type && (lang === 'pie' || lang === 'bar' || lang === 'line')) {
+                                      parsed.type = lang;
                                     }
-                                  } catch (e) {
-                                    // Not valid JSON chart data, fallback to normal code block
+                                    return <ChartRenderer dataPayload={parsed} />;
                                   }
-                                }
-
-                                if (inline) {
+                                } catch (e) {
+                                  if (isGenerating && idx === messages.length - 1) {
+                                    return (
+                                      <div className="my-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 text-amber-500 dark:text-amber-400 text-xs flex items-center gap-2 not-prose">
+                                        <span className="animate-spin inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full" />
+                                        <span>Generating chart visualization...</span>
+                                      </div>
+                                    );
+                                  }
                                   return (
-                                    <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
-                                      {children}
-                                    </code>
+                                    <div className="my-2 p-3.5 rounded-xl border border-red-500/30 bg-red-500/5 text-red-500 dark:text-red-400 text-xs font-medium not-prose">
+                                      <div className="font-bold flex items-center gap-1.5 mb-1">
+                                        <span>⚠️</span>
+                                        <span>Chart Rendering Limitation</span>
+                                      </div>
+                                      <p className="opacity-90">Unable to parse chart specification payload.</p>
+                                    </div>
                                   );
                                 }
-                                return (
-                                  <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
-                                    <code>{children}</code>
-                                  </pre>
-                                );
-                              },
-                            }}
-                          >
-                            {msg.content}
-                          </ReactMarkdown>
+                              }
 
-                          {/* Fallback chart extractor if model wrote text breakdown without ```chart block */}
-                          {(() => {
-                            const fallbackChart = extractChartFromText(msg.content)
-                            return fallbackChart ? <ChartRenderer dataPayload={fallbackChart} /> : null
-                          })()}
-                        </>
-                      ) : (
-                        <span className="dots inline-flex items-center py-1.5" aria-label="Thinking">
-                          <span></span><span></span><span></span>
-                        </span>
-                      )}
-                      {msg.content && (
+                              if (inline) {
+                                return (
+                                  <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                    {children}
+                                  </code>
+                                );
+                              }
+                              return (
+                                <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
+                                  <code>{children}</code>
+                                </pre>
+                              );
+                            },
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+
                         <div className="flex justify-end items-center gap-3 pt-2">
                           {handleRegenerate && (
                             <button
@@ -458,9 +423,9 @@ export const MessageList: React.FC<MessageListProps> = ({
                             )}
                           </button>
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
               )}
             </div>

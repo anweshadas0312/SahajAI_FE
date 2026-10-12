@@ -575,42 +575,79 @@ body:has(#terms-page) {
     transform: scale(0.97);
   }
 }
+/* Animated Text-Based Thinking Loader */
+.sahaj-thinking-text {
+  letter-spacing: 0.02em;
+  animation: sahaj-thinking-pulse 2s ease-in-out infinite;
+}
 
-/* Typing Dots */
-.dots span {
+.sahaj-thinking-dots {
+  display: inline-flex;
+  margin-left: 1px;
+}
+
+.sahaj-dot {
   display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin-right: 4px;
-  border-radius: 50%;
-  background: var(--color-accent-yellow, #EAB308);
-  animation: ct-dot 1.2s infinite ease-in-out;
+  opacity: 0.25;
+  animation: sahaj-dot-fade 1.4s ease-in-out infinite;
 }
 
-.dots span:nth-child(2) {
-  animation-delay: 0.15s;
+.sahaj-dot.dot-1 {
+  animation-delay: 0s;
 }
 
-.dots span:nth-child(3) {
-  animation-delay: 0.3s;
+.sahaj-dot.dot-2 {
+  animation-delay: 0.22s;
 }
 
-@keyframes ct-dot {
+.sahaj-dot.dot-3 {
+  animation-delay: 0.44s;
+}
 
-  0%,
-  80%,
+@keyframes sahaj-thinking-pulse {
+  0%, 100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Dynamic Status Text Loader Transition */
+.sahaj-status-fade {
+  display: inline-block;
+  animation: sahaj-status-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes sahaj-status-enter {
+  0% {
+    opacity: 0.3;
+    transform: translateY(1.5px);
+  }
   100% {
-    opacity: 0.25;
+    opacity: 1;
     transform: translateY(0);
   }
+}
 
-  40% {
+@keyframes sahaj-dot-fade {
+  0%, 100% {
+    opacity: 0.25;
+  }
+  50% {
     opacity: 1;
-    transform: translateY(-3px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sahaj-status-fade,
+  .sahaj-thinking-text,
+  .sahaj-dot {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   .ct-bulb * {
     animation: none !important;
   }
@@ -1126,9 +1163,6 @@ body:has(#terms-page) {
   background: #EAB308 !important;
 }
 
-[data-theme="light"] .dots span {
-  background: #ca8a04 !important;
-}
 
 /* ==========================================================================
    Admin Dashboard in Light Mode

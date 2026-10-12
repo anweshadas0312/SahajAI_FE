@@ -133,37 +133,97 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
     initialType === 'bar' ? 'bar' : initialType === 'line' ? 'line' : 'pie'
   );
 
-  const title = dataPayload.title || 'Data Visualization';
-  const rawData = Array.isArray(dataPayload.data) ? dataPayload.data : [];
+  const title = dataPayload?.title || 'Data Visualization';
 
-  // Ensure data items have numeric values
-  const data = rawData.map((item, idx) => {
-    const name = item.name ?? item.label ?? item.category ?? `Item ${idx + 1}`;
-    const value = typeof item.value === 'number' ? item.value : parseFloat(item.value) || 0;
-    return { ...item, name: String(name), value };
-  });
+  // Strict Payload Validation
+  let validationError: string | null = null;
+  const rawData = Array.isArray(dataPayload?.data) ? dataPayload.data : [];
 
-  if (data.length === 0) {
-    return null;
+  if (rawData.length === 0) {
+    validationError = 'No data points provided for chart visualization.';
   }
 
+  // Validate items and numeric values without silent zero coercion
+  const validDataItems: Array<{ name: string; value: number }> = [];
+  if (!validationError) {
+    for (let i = 0; i < rawData.length; i++) {
+      const item = rawData[i];
+      if (!item || typeof item !== 'object') {
+        validationError = `Invalid data point at index ${i + 1}.`;
+        break;
+      }
+      const rawName = item.name ?? item.label ?? item.category;
+      if (rawName === undefined || rawName === null || String(rawName).trim() === '') {
+        validationError = `Missing category name at index ${i + 1}.`;
+        break;
+      }
+      const val = item.value;
+      if (typeof val !== 'number' || isNaN(val) || !isFinite(val)) {
+        validationError = `Invalid non-numeric value for '${String(rawName)}': ${val}.`;
+        break;
+      }
+      validDataItems.push({ ...item, name: String(rawName), value: val });
+    }
+  }
+
+  // Type-specific checks
+  if (!validationError) {
+    if (activeType === 'pie') {
+      if (validDataItems.length < 2) {
+        validationError = 'Pie charts require at least two categories to establish proportional parts of a whole.';
+      } else if (validDataItems.some(it => it.value < 0)) {
+        validationError = 'Pie charts cannot display negative values.';
+      } else {
+        const sum = validDataItems.reduce((acc, it) => acc + it.value, 0);
+        if (sum <= 0) {
+          validationError = 'Total value must be greater than zero to establish meaningful proportions.';
+        }
+      }
+    } else if (activeType === 'line') {
+      if (validDataItems.length < 2) {
+        validationError = 'Line charts require at least two data points to establish a continuous trend.';
+      }
+    }
+  }
+
+  // If payload is invalid or absent, render a clear, readable limitation card
+  if (validationError) {
+    return (
+      <div
+        className="my-2 p-3.5 sm:p-4 rounded-xl border text-xs sm:text-sm font-medium transition-colors not-prose"
+        style={{
+          backgroundColor: isDark ? '#111827' : '#fef2f2',
+          borderColor: isDark ? '#374151' : '#fecaca',
+          color: isDark ? '#f87171' : '#b91c1c',
+        }}
+      >
+        <div className="flex items-center gap-2 mb-1 font-bold text-sm">
+          <span>⚠️</span>
+          <span>Chart Rendering Limitation</span>
+        </div>
+        <p className="opacity-90">{validationError}</p>
+      </div>
+    );
+  }
+
+  const data = validDataItems;
   const totalValue = data.reduce((sum, item) => sum + (item.value || 0), 0);
 
   // Dynamic style tokens based on active theme
-  const containerBg = isDark ? '#111827' : '#ffffff';
-  const containerBorder = isDark ? '#1f2937' : '#e5e7eb';
+  const containerBg = isDark ? '#111827' : '#f8fafc';
+  const containerBorder = isDark ? '#1f2937' : '#e2e8f0';
   const titleColor = isDark ? '#ffffff' : '#111827';
   const subtitleColor = isDark ? '#9ca3af' : '#6b7280';
   const accentGold = isDark ? '#EAB308' : '#ca8a04';
-  const cardBg = isDark ? '#1f2937' : '#f9fafb';
-  const cardBorder = isDark ? '#374151' : '#e5e7eb';
+  const cardBg = isDark ? '#1f2937' : '#ffffff';
+  const cardBorder = isDark ? '#374151' : '#e2e8f0';
   const cardTextColor = isDark ? '#e5e7eb' : '#1f2937';
   const axisColor = isDark ? '#9ca3af' : '#6b7280';
   const axisTickColor = isDark ? '#e5e7eb' : '#374151';
 
   return (
     <div
-      className="my-4 p-4 rounded-xl border shadow-md transition-colors not-prose overflow-hidden"
+      className="my-2 first:mt-0 last:mb-1 p-3.5 sm:p-4 rounded-xl border transition-colors not-prose overflow-hidden"
       style={{
         backgroundColor: containerBg,
         borderColor: containerBorder,

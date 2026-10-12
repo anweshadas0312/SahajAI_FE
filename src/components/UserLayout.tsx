@@ -32,6 +32,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   const [jailbreak, setJailbreak] = useState('default')
   const [webAccess, setWebAccess] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState('Thinking...')
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
@@ -49,6 +50,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       abortControllerRef.current = null
     }
     setIsGenerating(false)
+    setLoadingStatus('Thinking...')
     setMessages(prev => {
       const last = prev[prev.length - 1]
       if (last && last.role === 'assistant' && (!last.content || !last.content.trim())) {
@@ -178,6 +180,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     const newMessages = [...messages, { role: 'user' as const, content: promptToSend, files: currentFiles, isAutoPrompt }]
     setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
     setIsGenerating(true)
+    setLoadingStatus('Thinking...')
 
     const shortTitle = promptToSend.slice(0, 32) + (promptToSend.length > 32 ? '...' : '')
     let activeId = currentConversationId || conversationIdRef.current
@@ -232,19 +235,86 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let assistantContent = ''
+      let isSSE: boolean | null = null
+      let sseBuffer = ''
 
       while (true) {
         const { value, done } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
+        if (!chunk) continue
 
         if ((assistantContent + chunk).trim().toLowerCase().startsWith('<html') ||
           (assistantContent + chunk).trim().toLowerCase().startsWith('<!doctype')) {
           throw new Error('GATEWAY_TIMEOUT_504')
         }
 
-        assistantContent += chunk
-        setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+        if (isSSE === null) {
+          const firstTrimmed = chunk.trim()
+          isSSE = firstTrimmed.startsWith('data:') || firstTrimmed.startsWith('event:')
+        }
+
+        if (!isSSE) {
+          assistantContent += chunk
+          setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          continue
+        }
+
+        sseBuffer += chunk
+        const lines = sseBuffer.split('\n')
+        sseBuffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || trimmed === 'data: [DONE]') continue
+
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6).trim()
+            try {
+              const parsed = JSON.parse(dataStr)
+              if (parsed.type === 'status' && parsed.text) {
+                setLoadingStatus(parsed.text)
+                continue
+              } else if (parsed.type === 'content' && parsed.delta) {
+                assistantContent += parsed.delta
+                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                continue
+              } else if (parsed.type === 'error' && parsed.error) {
+                assistantContent += parsed.error
+                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                continue
+              } else if (parsed.type === 'done') {
+                continue
+              }
+            } catch {
+              assistantContent += dataStr
+              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+              continue
+            }
+          } else if (trimmed.startsWith('event: ')) {
+            continue
+          } else {
+            assistantContent += line + '\n'
+            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          }
+        }
+      }
+
+      if (isSSE && sseBuffer.trim()) {
+        const trimmed = sseBuffer.trim()
+        if (trimmed.startsWith('data: ')) {
+          const dataStr = trimmed.slice(6).trim()
+          try {
+            const parsed = JSON.parse(dataStr)
+            if (parsed.type === 'content' && parsed.delta) {
+              assistantContent += parsed.delta
+              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+            }
+          } catch {
+            assistantContent += dataStr
+            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          }
+        }
       }
     } catch (error: any) {
       if (error?.name === 'AbortError' || controller.signal.aborted) {
@@ -278,6 +348,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     } finally {
       abortControllerRef.current = null
       setIsGenerating(false)
+      setLoadingStatus('Thinking...')
     }
   }
 
@@ -296,6 +367,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     const newMessages = [...baseMessages, updatedUserMsg]
     setMessages([...newMessages, { role: 'assistant' as const, content: '' }])
     setIsGenerating(true)
+    setLoadingStatus('Thinking...')
 
     const controller = new AbortController()
     abortControllerRef.current = controller
@@ -341,19 +413,86 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let assistantContent = ''
+      let isSSE: boolean | null = null
+      let sseBuffer = ''
 
       while (true) {
         const { value, done } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
+        if (!chunk) continue
 
         if ((assistantContent + chunk).trim().toLowerCase().startsWith('<html') ||
           (assistantContent + chunk).trim().toLowerCase().startsWith('<!doctype')) {
           throw new Error('GATEWAY_TIMEOUT_504')
         }
 
-        assistantContent += chunk
-        setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+        if (isSSE === null) {
+          const firstTrimmed = chunk.trim()
+          isSSE = firstTrimmed.startsWith('data:') || firstTrimmed.startsWith('event:')
+        }
+
+        if (!isSSE) {
+          assistantContent += chunk
+          setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          continue
+        }
+
+        sseBuffer += chunk
+        const lines = sseBuffer.split('\n')
+        sseBuffer = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed || trimmed === 'data: [DONE]') continue
+
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6).trim()
+            try {
+              const parsed = JSON.parse(dataStr)
+              if (parsed.type === 'status' && parsed.text) {
+                setLoadingStatus(parsed.text)
+                continue
+              } else if (parsed.type === 'content' && parsed.delta) {
+                assistantContent += parsed.delta
+                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                continue
+              } else if (parsed.type === 'error' && parsed.error) {
+                assistantContent += parsed.error
+                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                continue
+              } else if (parsed.type === 'done') {
+                continue
+              }
+            } catch {
+              assistantContent += dataStr
+              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+              continue
+            }
+          } else if (trimmed.startsWith('event: ')) {
+            continue
+          } else {
+            assistantContent += line + '\n'
+            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          }
+        }
+      }
+
+      if (isSSE && sseBuffer.trim()) {
+        const trimmed = sseBuffer.trim()
+        if (trimmed.startsWith('data: ')) {
+          const dataStr = trimmed.slice(6).trim()
+          try {
+            const parsed = JSON.parse(dataStr)
+            if (parsed.type === 'content' && parsed.delta) {
+              assistantContent += parsed.delta
+              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+            }
+          } catch {
+            assistantContent += dataStr
+            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          }
+        }
       }
     } catch (error: any) {
       if (error?.name === 'AbortError' || controller.signal.aborted) {
@@ -387,6 +526,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
     } finally {
       abortControllerRef.current = null
       setIsGenerating(false)
+      setLoadingStatus('Thinking...')
     }
   }
 
@@ -429,6 +569,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
         <MessageList
           isGenerating={isGenerating}
+          loadingStatus={loadingStatus}
           handleSend={handleSend}
           copiedIndex={copiedIndex}
           handleCopyCode={handleCopyCode}
