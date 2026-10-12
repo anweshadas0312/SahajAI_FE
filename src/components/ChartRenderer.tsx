@@ -120,6 +120,7 @@ const CustomActiveDot = (props: any) => {
 };
 
 export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   let isDark = true;
   try {
     const themeCtx = useTheme();
@@ -132,6 +133,22 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
   const [activeType, setActiveType] = useState<'pie' | 'bar' | 'line'>(
     initialType === 'bar' ? 'bar' : initialType === 'line' ? 'line' : 'pie'
   );
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scrollContainerRef.current) {
+        const el = scrollContainerRef.current;
+        if (el.scrollWidth > el.clientWidth) {
+          if (activeType === 'pie') {
+            el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+          } else {
+            el.scrollLeft = 0;
+          }
+        }
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [activeType, dataPayload]);
 
   const title = dataPayload?.title || 'Data Visualization';
 
@@ -291,9 +308,13 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
         </div>
       </div>
 
-      {/* Chart Canvas Container */}
-      <div className="w-full h-72 sm:h-80 relative">
-        <ResponsiveContainer width="100%" height="100%">
+      {/* Chart Canvas Container (Horizontal scrollbar for phone view only) */}
+      <div
+        ref={scrollContainerRef}
+        className="w-full chart-scroll pb-2 sm:pb-0"
+      >
+        <div className="w-full min-w-[480px] sm:min-w-0 sm:w-full h-72 sm:h-80 relative">
+          <ResponsiveContainer width="100%" height="100%">
           {activeType === 'pie' ? (
             <PieChart margin={{ top: 15, right: 15, left: 15, bottom: 15 }}>
               <Tooltip content={<CustomTooltip totalValue={totalValue} isDark={isDark} />} />
@@ -364,6 +385,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({ dataPayload }) => 
             </LineChart>
           )}
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Clean Scrollable Summary Cards Grid */}

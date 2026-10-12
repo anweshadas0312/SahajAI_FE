@@ -139,8 +139,16 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   }, [messages])
 
   useEffect(() => {
+    conversationIdRef.current = currentConversationId || ''
     if (currentConversationId) {
-      conversationIdRef.current = currentConversationId
+      // Ensure UI knows whether the newly focused chat is still generating
+      if (localStorage.getItem(`sahaj_active_stream_${currentConversationId}`) === 'true') {
+        setIsGenerating(true)
+      } else {
+        setIsGenerating(false)
+      }
+    } else {
+      setIsGenerating(false)
     }
   }, [currentConversationId])
 
@@ -193,8 +201,22 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
     const controller = new AbortController()
     abortControllerRef.current = controller
+    const targetConversationId = activeId
+    if (targetConversationId) {
+      localStorage.setItem(`sahaj_active_stream_${targetConversationId}`, 'true')
+    }
 
     try {
+      const applyAssistantUpdate = (content: string) => {
+        const updatedMessages = [...newMessages, { role: 'assistant' as const, content }]
+        if (targetConversationId) {
+          localStorage.setItem(`sahaj_msgs_${targetConversationId}`, JSON.stringify(updatedMessages))
+        }
+        if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+          setMessages(updatedMessages)
+        }
+      }
+
       const streamToken = Math.random().toString(36).substring(2)
       const response = await fetch(API_ENDPOINTS.CONVERSATION.STREAM, {
         method: 'POST',
@@ -256,7 +278,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
         if (!isSSE) {
           assistantContent += chunk
-          setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          applyAssistantUpdate(assistantContent)
           continue
         }
 
@@ -273,29 +295,31 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             try {
               const parsed = JSON.parse(dataStr)
               if (parsed.type === 'status' && parsed.text) {
-                setLoadingStatus(parsed.text)
+                if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+                  setLoadingStatus(parsed.text)
+                }
                 continue
               } else if (parsed.type === 'content' && parsed.delta) {
                 assistantContent += parsed.delta
-                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                applyAssistantUpdate(assistantContent)
                 continue
               } else if (parsed.type === 'error' && parsed.error) {
                 assistantContent += parsed.error
-                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                applyAssistantUpdate(assistantContent)
                 continue
               } else if (parsed.type === 'done') {
                 continue
               }
             } catch {
               assistantContent += dataStr
-              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+              applyAssistantUpdate(assistantContent)
               continue
             }
           } else if (trimmed.startsWith('event: ')) {
             continue
           } else {
             assistantContent += line + '\n'
-            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+            applyAssistantUpdate(assistantContent)
           }
         }
       }
@@ -308,11 +332,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             const parsed = JSON.parse(dataStr)
             if (parsed.type === 'content' && parsed.delta) {
               assistantContent += parsed.delta
-              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+              applyAssistantUpdate(assistantContent)
             }
           } catch {
             assistantContent += dataStr
-            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+            applyAssistantUpdate(assistantContent)
           }
         }
       }
@@ -335,20 +359,29 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       else if (error?.message === 'AUTH_ERROR') customNotice = '⚠️ **Authentication Required**: Your session has expired. Please log in again.'
       else if (error?.message?.startsWith('HTTP_ERROR_')) customNotice = `⚠️ **Server Error (${error.message.replace('HTTP_ERROR_', '')})**: The server encountered an issue processing your request.`
 
-      setMessages(prev => {
-        const last = prev[prev.length - 1]
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            content: (last && !last.content.trim().toLowerCase().startsWith('<html') ? last.content : '') + `\n\n> ${customNotice}`,
-          },
-        ]
-      })
+      const errorMessages = [
+        ...newMessages,
+        {
+          role: 'assistant' as const,
+          content: `\n\n> ${customNotice}`,
+        },
+      ]
+      if (targetConversationId) {
+        localStorage.setItem(`sahaj_msgs_${targetConversationId}`, JSON.stringify(errorMessages))
+      }
+
+      if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+        setMessages(errorMessages)
+      }
     } finally {
       abortControllerRef.current = null
-      setIsGenerating(false)
-      setLoadingStatus('Thinking...')
+      if (targetConversationId) {
+        localStorage.removeItem(`sahaj_active_stream_${targetConversationId}`)
+      }
+      if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+        setIsGenerating(false)
+        setLoadingStatus('Thinking...')
+      }
     }
   }
 
@@ -371,8 +404,22 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
     const controller = new AbortController()
     abortControllerRef.current = controller
+    const targetConversationId = conversationIdRef.current
+    if (targetConversationId) {
+      localStorage.setItem(`sahaj_active_stream_${targetConversationId}`, 'true')
+    }
 
     try {
+      const applyAssistantUpdate = (content: string) => {
+        const updatedMessages = [...newMessages, { role: 'assistant' as const, content }]
+        if (targetConversationId) {
+          localStorage.setItem(`sahaj_msgs_${targetConversationId}`, JSON.stringify(updatedMessages))
+        }
+        if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+          setMessages(updatedMessages)
+        }
+      }
+
       const streamToken = Math.random().toString(36).substring(2)
       const response = await fetch(API_ENDPOINTS.CONVERSATION.STREAM, {
         method: 'POST',
@@ -434,7 +481,7 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
 
         if (!isSSE) {
           assistantContent += chunk
-          setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+          applyAssistantUpdate(assistantContent)
           continue
         }
 
@@ -451,29 +498,31 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             try {
               const parsed = JSON.parse(dataStr)
               if (parsed.type === 'status' && parsed.text) {
-                setLoadingStatus(parsed.text)
+                if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+                  setLoadingStatus(parsed.text)
+                }
                 continue
               } else if (parsed.type === 'content' && parsed.delta) {
                 assistantContent += parsed.delta
-                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                applyAssistantUpdate(assistantContent)
                 continue
               } else if (parsed.type === 'error' && parsed.error) {
                 assistantContent += parsed.error
-                setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+                applyAssistantUpdate(assistantContent)
                 continue
               } else if (parsed.type === 'done') {
                 continue
               }
             } catch {
               assistantContent += dataStr
-              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+              applyAssistantUpdate(assistantContent)
               continue
             }
           } else if (trimmed.startsWith('event: ')) {
             continue
           } else {
             assistantContent += line + '\n'
-            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+            applyAssistantUpdate(assistantContent)
           }
         }
       }
@@ -486,11 +535,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
             const parsed = JSON.parse(dataStr)
             if (parsed.type === 'content' && parsed.delta) {
               assistantContent += parsed.delta
-              setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+              applyAssistantUpdate(assistantContent)
             }
           } catch {
             assistantContent += dataStr
-            setMessages([...newMessages, { role: 'assistant' as const, content: assistantContent }])
+            applyAssistantUpdate(assistantContent)
           }
         }
       }
@@ -513,20 +562,28 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       else if (error?.message === 'AUTH_ERROR') customNotice = '⚠️ **Authentication Required**: Your session has expired. Please log in again.'
       else if (error?.message?.startsWith('HTTP_ERROR_')) customNotice = `⚠️ **Server Error (${error.message.replace('HTTP_ERROR_', '')})**: The server encountered an issue processing your request.`
 
-      setMessages(prev => {
-        const last = prev[prev.length - 1]
-        return [
-          ...prev.slice(0, -1),
-          {
-            ...last,
-            content: (last && !last.content.trim().toLowerCase().startsWith('<html') ? last.content : '') + `\n\n> ${customNotice}`,
-          },
-        ]
-      })
+      const errorMessages = [
+        ...newMessages,
+        {
+          role: 'assistant' as const,
+          content: `\n\n> ${customNotice}`,
+        },
+      ]
+      if (targetConversationId) {
+        localStorage.setItem(`sahaj_msgs_${targetConversationId}`, JSON.stringify(errorMessages))
+      }
+      if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+        setMessages(errorMessages)
+      }
     } finally {
       abortControllerRef.current = null
-      setIsGenerating(false)
-      setLoadingStatus('Thinking...')
+      if (targetConversationId) {
+        localStorage.removeItem(`sahaj_active_stream_${targetConversationId}`)
+      }
+      if (!targetConversationId || conversationIdRef.current === targetConversationId) {
+        setIsGenerating(false)
+        setLoadingStatus('Thinking...')
+      }
     }
   }
 

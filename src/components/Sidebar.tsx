@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Plus,
   MessageSquare,
@@ -53,6 +53,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isHelpSubmenuOpen, setIsHelpSubmenuOpen] = useState(false)
 
+  const profileRef = useRef<HTMLDivElement>(null)
+  const workspaceRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false)
+        setIsHelpSubmenuOpen(false)
+      }
+      if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
+        setIsWorkspaceMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   return (
     <>
       {/* Mobile Backdrop Overlay */}
@@ -94,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {/* Workspace Dropdown Button */}
-            <div className="relative">
+            <div className="relative" ref={workspaceRef}>
               <button
                 onClick={() => setIsWorkspaceMenuOpen(!isWorkspaceMenuOpen)}
                 className={`w-full border text-left px-3.5 py-2.5 rounded-xl flex items-center justify-between transition cursor-pointer ${isLight
@@ -260,11 +277,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Profile Card or Sign In Button */}
           {isAuthenticated ? (
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               {isProfileMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => { setIsProfileMenuOpen(false); setIsHelpSubmenuOpen(false); }} />
-                  <div className={`absolute left-0 right-0 bottom-full mb-2 border rounded-xl shadow-2xl z-50 p-1 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                <div className={`absolute left-0 right-0 bottom-full mb-2 border rounded-xl shadow-2xl z-50 p-1 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
                     <div className="relative">
                       <button
                         onClick={(e) => {
@@ -278,7 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </button>
 
                       {isHelpSubmenuOpen && (
-                        <div className={`absolute left-full bottom-0 ml-1 w-48 border rounded-xl shadow-xl overflow-hidden p-1 z-50 ${theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                        <div className={`mt-1 flex flex-col gap-0.5 overflow-hidden p-1 ${theme === 'light' ? 'bg-gray-50 rounded-lg' : 'bg-gray-800/50 rounded-lg'}`}>
                           <a
                             href="/privacy-policy"
                             target="_blank"
@@ -287,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setIsHelpSubmenuOpen(false)
                               setIsProfileMenuOpen(false)
                             }}
-                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-600 hover:bg-gray-200 hover:text-black' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                           >
                             Privacy Policy
                           </a>
@@ -299,7 +314,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setIsHelpSubmenuOpen(false)
                               setIsProfileMenuOpen(false)
                             }}
-                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-600 hover:bg-gray-200 hover:text-black' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                           >
                             Disclaimer
                           </a>
@@ -311,7 +326,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               setIsHelpSubmenuOpen(false)
                               setIsProfileMenuOpen(false)
                             }}
-                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-700 hover:bg-gray-100 hover:text-black' : 'text-gray-200 hover:bg-gray-800 hover:text-white'}`}
+                            className={`block px-3 py-2 text-xs rounded-lg transition ${theme === 'light' ? 'text-gray-600 hover:bg-gray-200 hover:text-black' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}
                           >
                             Terms and Conditions
                           </a>
@@ -319,7 +334,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       )}
                     </div>
                   </div>
-                </>
               )}
 
               <div

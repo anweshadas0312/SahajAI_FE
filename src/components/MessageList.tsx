@@ -71,9 +71,9 @@ export const MessageList: React.FC<MessageListProps> = ({
   const [editingText, setEditingText] = React.useState<string>('')
 
   return (
-    <div className={`${messages.length === 0 && !isGenerating
-      ? 'flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 flex flex-col'
-      : 'flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 flex flex-col'
+    <div className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden ${messages.length === 0 && !isGenerating
+      ? 'p-2 sm:p-4 flex flex-col'
+      : 'p-3 sm:p-6 flex flex-col'
       }`}>
       {messages.length === 0 && !isGenerating ? (
         <div className="max-w-3xl mx-auto w-full flex flex-col items-center sm:my-auto py-6 sm:py-8 px-2 sm:px-4 shrink-0 pb-[100px]">
@@ -322,10 +322,15 @@ export const MessageList: React.FC<MessageListProps> = ({
                         : 'bg-[#141a27] text-gray-200 border border-gray-800'
                         }`}
                     >
-                      <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2 prose prose-sm dark:prose-invert max-w-none">
+                      <div className="relative group text-xs sm:text-sm leading-relaxed space-y-2 prose prose-sm dark:prose-invert max-w-none min-w-0 overflow-hidden break-words">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
+                            p: ({ node, children, ...props }) => (
+                              <p className="break-words leading-relaxed my-1.5" {...props}>
+                                {children}
+                              </p>
+                            ),
                             a: ({ node, href, children, ...props }) => (
                               <a
                                 href={href}
@@ -337,6 +342,18 @@ export const MessageList: React.FC<MessageListProps> = ({
                                 <span>{children}</span>
                                 <ExternalLink className="w-3.5 h-3.5 inline-block shrink-0 opacity-80" />
                               </a>
+                            ),
+                            table: ({ node, children, ...props }) => (
+                              <div className="overflow-x-auto max-w-full my-3 border border-gray-800 rounded-lg">
+                                <table className="min-w-full text-left text-xs divide-y divide-gray-800" {...props}>
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            pre: ({ node, children, ...props }: any) => (
+                              <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto max-w-full text-xs font-mono my-2 text-gray-200" {...props}>
+                                {children}
+                              </pre>
                             ),
                             code: ({ node, inline, className, children, ...props }: any) => {
                               const match = /language-(\w+)/.exec(className || '');
@@ -375,15 +392,15 @@ export const MessageList: React.FC<MessageListProps> = ({
 
                               if (inline) {
                                 return (
-                                  <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs" {...props}>
+                                  <code className="bg-[#141a27] text-[#EAB308] px-1.5 py-0.5 rounded font-mono text-xs break-all" {...props}>
                                     {children}
                                   </code>
                                 );
                               }
                               return (
-                                <pre className="bg-[#0f141f] border border-[#232d3f] p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 text-gray-200" {...props}>
-                                  <code>{children}</code>
-                                </pre>
+                                <code className="block w-fit min-w-full font-mono text-xs" {...props}>
+                                  {children}
+                                </code>
                               );
                             },
                           }}
