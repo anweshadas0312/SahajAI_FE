@@ -19,6 +19,7 @@ import {
   Edit3,
   Plus,
   Zap,
+  Star,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -64,6 +65,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   const [providersList, setProvidersList] = useState<LlmProvider[]>([])
   const [isProviderModalOpen, setIsProviderModalOpen] = useState(false)
   const [editingProvider, setEditingProvider] = useState<LlmProvider | null>(null)
+  const [roleUpdatingId, setRoleUpdatingId] = useState<number | null>(null)
 
   const showNotification = (type: 'success' | 'error', text: string) => {
     setNotification({ type, text })
@@ -129,10 +131,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
   }
 
   const handleToggleProviderStatus = async (id: number, currentActive: boolean) => {
+    const prov = providersList.find(p => p.id === id)
+    if (!prov) return
+
     const newActive = !currentActive
+    // Validation: cannot disable an active Primary or Fallback LLM
+    if (!newActive && (prov.is_default || prov.is_fallback)) {
+      showNotification(
+        'error',
+        `Cannot disable '${prov.name}': Currently assigned as ${prov.is_default ? 'PRIMARY' : 'FALLBACK'} LLM. Assign another model first.`
+      )
+      return
+    }
+
     setProvidersList(prev => prev.map(p => (p.id === id ? { ...p, is_active: newActive } : p)))
     try {
-      await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_TOGGLE(id), {
+      const res = await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_TOGGLE(id), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +154,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
         },
         body: JSON.stringify({ is_active: newActive }),
       })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.success) {
+        // Rollback state on error
+        setProvidersList(prev => prev.map(p => (p.id === id ? { ...p, is_active: currentActive } : p)))
+        showNotification('error', data?.error || 'Failed to update provider status')
+      }
     } catch (err) {
+      setProvidersList(prev => prev.map(p => (p.id === id ? { ...p, is_active: currentActive } : p)))
       console.warn('Toggle note:', err)
     }
   }
@@ -170,6 +191,91 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
       setProvidersList(prev =>
         prev.map(p => (p.id === id ? { ...p, test_status: 'failed', test_message: 'Network error' } : p))
       )
+    }
+  }
+
+  const handleSetProviderRole = async (id: number, role: 'default' | 'fallback') => {
+    const targetProv = providersList.find(p => p.id === id)
+    if (!targetProv) return
+
+    // Validation: inactive provider (is_active === false) cannot be set as Primary or Fallback
+    if (!targetProv.is_active) {
+      showNotification(
+        'error',
+        `Cannot set '${targetProv.name}' as ${role === 'default' ? 'PRIMARY' : 'FALLBACK'} LLM: Provider is currently inactive (is_active = 0). Please enable status first.`
+      )
+      return
+    }
+
+    // If already in that role, no action needed
+    if ((role === 'default' && targetProv.is_default) || (role === 'fallback' && targetProv.is_fallback)) {
+      return
+    }
+
+    const previousList = [...providersList]
+
+    // OPTIMISTIC UPDATE: Instant UI response with zero lag
+    setProvidersList(prev =>
+      prev.map(p => {
+        if (role === 'default') {
+          if (p.id === id) {
+            return { ...p, is_default: true, is_fallback: false }
+          } else {
+            // Old Primary gets unselected immediately!
+            // If target was previously fallback and this was default, swap cleanly
+            const wasTargetFallback = targetProv.is_fallback
+            const wasThisDefault = p.is_default
+            return {
+              ...p,
+              is_default: false,
+              is_fallback: (wasTargetFallback && wasThisDefault) ? true : p.is_fallback,
+            }
+          }
+        } else {
+          // role === 'fallback'
+          if (p.id === id) {
+            return { ...p, is_fallback: true, is_default: false }
+          } else {
+            // Old Fallback gets unselected immediately!
+            // If target was previously default and this was fallback, swap cleanly
+            const wasTargetDefault = targetProv.is_default
+            const wasThisFallback = p.is_fallback
+            return {
+              ...p,
+              is_fallback: false,
+              is_default: (wasTargetDefault && wasThisFallback) ? true : p.is_default,
+            }
+          }
+        }
+      })
+    )
+
+    setRoleUpdatingId(id)
+
+    try {
+      const res = await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_SET_ROLE(id), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ role }),
+      })
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.success) {
+        if (data.providers) {
+          setProvidersList(data.providers)
+        }
+        showNotification('success', data.message || `Assigned as ${role.toUpperCase()} model!`)
+      } else {
+        setProvidersList(previousList)
+        showNotification('error', data?.error || (res.status === 404 ? 'Route not found (Backend restart required)' : `Server error: ${res.status}`))
+      }
+    } catch (err) {
+      setProvidersList(previousList)
+      showNotification('error', 'Network error updating LLM role')
+    } finally {
+      setRoleUpdatingId(null)
     }
   }
 
@@ -776,6 +882,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                       <th className="py-3 px-3">MODEL & ENDPOINT</th>
                       <th className="py-3 px-3">API KEY</th>
                       <th className="py-3 px-3">STATUS</th>
+                      <th className="py-3 px-3">FAILOVER ROLE</th>
                       <th className="py-3 px-3">LIVE TEST</th>
                       <th className="py-3 px-3 text-right">ACTIONS</th>
                     </tr>
@@ -846,6 +953,70 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                                 }`}
                               />
                             </button>
+                          </td>
+                          {/* FAILOVER ROLE (DEFAULT / FALLBACK) */}
+                          <td className="py-3.5 px-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {/* Primary Default Button */}
+                              <button
+                                type="button"
+                                disabled={roleUpdatingId !== null || (prov.is_default && prov.is_active) || !prov.is_active}
+                                onClick={() => handleSetProviderRole(prov.id, 'default')}
+                                title={
+                                  !prov.is_active
+                                    ? 'Inactive provider cannot be set as Primary LLM (Enable status first)'
+                                    : prov.is_default && prov.is_active
+                                    ? 'Currently assigned as Primary Default LLM'
+                                    : 'Click to set as Primary Default LLM'
+                                }
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all duration-150 border ${
+                                  prov.is_default && prov.is_active
+                                    ? isLight
+                                      ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-sm cursor-default'
+                                      : 'bg-amber-500/20 text-[#EAB308] border-amber-500/40 shadow-sm shadow-amber-500/10 ring-1 ring-amber-500/30 cursor-default'
+                                    : !prov.is_active
+                                    ? isLight
+                                      ? 'bg-gray-100/60 text-gray-400 border-gray-200 border-dashed cursor-not-allowed opacity-50'
+                                      : 'bg-gray-800/30 text-gray-600 border-gray-800 border-dashed cursor-not-allowed opacity-50'
+                                    : isLight
+                                      ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200 cursor-pointer active:scale-95'
+                                      : 'bg-gray-800/60 hover:bg-gray-800 text-gray-400 border-gray-700/60 hover:text-gray-200 cursor-pointer active:scale-95'
+                                } ${roleUpdatingId === prov.id ? 'opacity-70 animate-pulse' : ''}`}
+                              >
+                                <Star className={`w-3 h-3 ${prov.is_default && prov.is_active ? 'fill-amber-400 text-amber-400' : 'text-gray-400'}`} />
+                                <span>{prov.is_default && prov.is_active ? 'Primary' : 'Set Primary'}</span>
+                              </button>
+
+                              {/* Fallback Button */}
+                              <button
+                                type="button"
+                                disabled={roleUpdatingId !== null || (prov.is_fallback && prov.is_active) || !prov.is_active}
+                                onClick={() => handleSetProviderRole(prov.id, 'fallback')}
+                                title={
+                                  !prov.is_active
+                                    ? 'Inactive provider cannot be set as Fallback LLM (Enable status first)'
+                                    : prov.is_fallback && prov.is_active
+                                    ? 'Currently assigned as Emergency Fallback LLM'
+                                    : 'Click to set as Emergency Fallback LLM'
+                                }
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all duration-150 border ${
+                                  prov.is_fallback && prov.is_active
+                                    ? isLight
+                                      ? 'bg-sky-100 text-sky-900 border-sky-300 shadow-sm cursor-default'
+                                      : 'bg-sky-500/20 text-sky-400 border-sky-500/40 shadow-sm shadow-sky-500/10 ring-1 ring-sky-500/30 cursor-default'
+                                    : !prov.is_active
+                                    ? isLight
+                                      ? 'bg-gray-100/60 text-gray-400 border-gray-200 border-dashed cursor-not-allowed opacity-50'
+                                      : 'bg-gray-800/30 text-gray-600 border-gray-800 border-dashed cursor-not-allowed opacity-50'
+                                    : isLight
+                                      ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200 cursor-pointer active:scale-95'
+                                      : 'bg-gray-800/60 hover:bg-gray-800 text-gray-400 border-gray-700/60 hover:text-gray-200 cursor-pointer active:scale-95'
+                                } ${roleUpdatingId === prov.id ? 'opacity-70 animate-pulse' : ''}`}
+                              >
+                                <Shield className={`w-3 h-3 ${prov.is_fallback && prov.is_active ? 'fill-sky-400 text-sky-400' : 'text-gray-400'}`} />
+                                <span>{prov.is_fallback && prov.is_active ? 'Fallback' : 'Set Fallback'}</span>
+                              </button>
+                            </div>
                           </td>
                           <td className="py-3.5 px-3 text-[11px]">
                             {prov.test_status === 'testing' ? (

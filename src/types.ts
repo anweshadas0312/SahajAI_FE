@@ -77,6 +77,8 @@ export interface LlmProvider {
   api_key: string
   timeout: number
   is_active: boolean
+  is_default?: boolean
+  is_fallback?: boolean
   created_at?: string
   updated_at?: string
   test_status?: 'idle' | 'testing' | 'success' | 'failed'

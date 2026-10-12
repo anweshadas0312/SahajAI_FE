@@ -124,8 +124,8 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   } = useWorkspace()
 
   const [input, setInput] = useState('')
-  // Model hardcoded to Qwen 2.5 Coder by default (easily expandable in the future)
-  const [model, setModel] = useState('qwen2.5-coder:1.5b')
+  // Model is loaded dynamically from database default_model
+  const [model, setModel] = useState('')
   void setModel // Keeps setModel referenced for future dynamic selection
   void Cpu // Keeps Cpu referenced for when model selector JSX is uncommented
   const [jailbreak, setJailbreak] = useState('default')

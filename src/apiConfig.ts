@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
     LLM_PROVIDER_BY_ID: (id: number | string) => p(`/api/admin/llm-providers/${id}`),
     LLM_PROVIDER_TOGGLE: (id: number | string) => p(`/api/admin/llm-providers/${id}/toggle`),
     LLM_PROVIDER_TEST: (id: number | string) => p(`/api/admin/llm-providers/${id}/test`),
+    LLM_PROVIDER_SET_ROLE: (id: number | string) => p(`/api/admin/llm-providers/${id}/set-role`),
   },
 
   // Localization & Language Support
