@@ -19,7 +19,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const [name, setName] = useState('')
-  const [providerType, setProviderType] = useState('mistral')
+  const [providerType, setProviderType] = useState('')
   const [modelName, setModelName] = useState('')
   const [endpoint, setEndpoint] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -31,7 +31,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
   useEffect(() => {
     if (provider) {
       setName(provider.name || '')
-      setProviderType(provider.provider_type || 'mistral')
+      setProviderType(provider.provider_type || '')
       setModelName(provider.model_name || '')
       setEndpoint(provider.endpoint || '')
       setApiKey(provider.api_key || '')
@@ -39,7 +39,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
       setIsActive(provider.is_active ?? true)
     } else {
       setName('')
-      setProviderType('mistral')
+      setProviderType('')
       setModelName('')
       setEndpoint('')
       setApiKey('')
@@ -78,15 +78,13 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
       onClick={e => {
         if (e.target === e.currentTarget) onClose()
       }}
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto transition-colors ${
-        isLight ? 'bg-slate-900/35' : 'bg-black/80'
-      }`}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto transition-colors ${isLight ? 'bg-slate-900/35' : 'bg-black/80'
+        }`}
     >
-      <div className={`relative w-full max-w-xl text-gray-900 dark:text-gray-100 rounded-3xl p-6 sm:p-7 transition-colors my-auto ${
-        isLight
-          ? 'bg-white border border-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.22)]'
-          : 'bg-[#111827] border border-gray-800 shadow-2xl'
-      }`}>
+      <div className={`relative w-full max-w-xl text-gray-900 dark:text-gray-100 rounded-3xl p-6 sm:p-7 transition-colors my-auto ${isLight
+        ? 'bg-white border border-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.22)]'
+        : 'bg-[#111827] border border-gray-800 shadow-2xl'
+        }`}>
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -235,9 +233,8 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`px-6 py-2.5 rounded-xl text-white text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50 ${
-                isLight ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#E67E22] hover:bg-[#D35400]'
-              }`}
+              className={`px-6 py-2.5 rounded-xl text-white text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50 ${isLight ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#E67E22] hover:bg-[#D35400]'
+                }`}
             >
               {isSubmitting ? 'Saving...' : 'Save Provider'}
             </button>
