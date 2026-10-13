@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Cpu, X, Globe, Key, Eye, EyeOff, Zap } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
 import type { LlmProvider } from '../types'
 
 interface LlmProviderModalProps {
@@ -15,8 +16,10 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { theme } = useTheme()
+  const isLight = theme === 'light'
   const [name, setName] = useState('')
-  const [providerType, setProviderType] = useState('mistral')
+  const [providerType, setProviderType] = useState('')
   const [modelName, setModelName] = useState('')
   const [endpoint, setEndpoint] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -28,7 +31,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
   useEffect(() => {
     if (provider) {
       setName(provider.name || '')
-      setProviderType(provider.provider_type || 'mistral')
+      setProviderType(provider.provider_type || '')
       setModelName(provider.model_name || '')
       setEndpoint(provider.endpoint || '')
       setApiKey(provider.api_key || '')
@@ -36,7 +39,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
       setIsActive(provider.is_active ?? true)
     } else {
       setName('')
-      setProviderType('mistral')
+      setProviderType('')
       setModelName('')
       setEndpoint('')
       setApiKey('')
@@ -46,6 +49,10 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
   }, [provider, isOpen])
 
   if (!isOpen) return null
+
+  const inputThemeClasses = isLight
+    ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10'
+    : 'bg-[#182030] border-gray-700/80 text-white placeholder:text-gray-500 focus:border-[#EAB308]'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,9 +78,13 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
       onClick={e => {
         if (e.target === e.currentTarget) onClose()
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto transition-colors ${isLight ? 'bg-slate-900/35' : 'bg-black/80'
+        }`}
     >
-      <div className="relative w-full max-w-xl bg-white dark:bg-[#111827] text-gray-900 dark:text-gray-100 rounded-3xl shadow-2xl p-6 sm:p-7 border border-gray-200 dark:border-gray-800 transition-colors my-auto">
+      <div className={`relative w-full max-w-xl text-gray-900 dark:text-gray-100 rounded-3xl p-6 sm:p-7 transition-colors my-auto ${isLight
+        ? 'bg-white border border-slate-200 shadow-[0_24px_80px_rgba(15,23,42,0.22)]'
+        : 'bg-[#111827] border border-gray-800 shadow-2xl'
+        }`}>
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -112,7 +123,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 onChange={e => setName(e.target.value)}
                 placeholder="Mistral Local"
                 required
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 dark:text-white font-medium outline-none focus:border-[#EAB308] transition"
+                className={`w-full border rounded-xl px-3.5 py-2.5 text-xs font-medium outline-none transition ${inputThemeClasses}`}
               />
             </div>
 
@@ -127,7 +138,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 onChange={e => setProviderType(e.target.value)}
                 placeholder="Mistral"
                 required
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl px-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
+                className={`w-full border rounded-xl px-3.5 py-2.5 text-xs font-mono outline-none transition ${inputThemeClasses}`}
               />
             </div>
           </div>
@@ -146,7 +157,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                   onChange={e => setModelName(e.target.value)}
                   placeholder="mistral:latest"
                   required
-                  className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
+                  className={`w-full border rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono outline-none transition ${inputThemeClasses}`}
                 />
               </div>
             </div>
@@ -163,7 +174,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                   value={timeoutSec}
                   onChange={e => setTimeoutSec(Number(e.target.value))}
                   placeholder="600"
-                  className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
+                  className={`w-full border rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono outline-none transition ${inputThemeClasses}`}
                 />
               </div>
             </div>
@@ -181,7 +192,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 value={endpoint}
                 onChange={e => setEndpoint(e.target.value)}
                 placeholder="https://api.mistral.ai/v1/chat/completions"
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
+                className={`w-full border rounded-xl pl-10 pr-3.5 py-2.5 text-xs font-mono outline-none transition ${inputThemeClasses}`}
               />
             </div>
           </div>
@@ -198,7 +209,7 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
                 placeholder="(leave empty to keep existing)"
-                className="w-full bg-gray-50 dark:bg-[#182030] border border-gray-300 dark:border-gray-700/80 rounded-xl pl-10 pr-10 py-2.5 text-xs font-mono text-gray-900 dark:text-white outline-none focus:border-[#EAB308] transition"
+                className={`w-full border rounded-xl pl-10 pr-10 py-2.5 text-xs font-mono outline-none transition ${inputThemeClasses}`}
               />
               <button
                 type="button"
@@ -222,7 +233,8 @@ export const LlmProviderModal: React.FC<LlmProviderModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-[#E67E22] hover:bg-[#D35400] text-white text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50"
+              className={`px-6 py-2.5 rounded-xl text-white text-xs font-bold transition shadow-md cursor-pointer disabled:opacity-50 ${isLight ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#E67E22] hover:bg-[#D35400]'
+                }`}
             >
               {isSubmitting ? 'Saving...' : 'Save Provider'}
             </button>
