@@ -20,6 +20,7 @@ import {
   Plus,
   Zap,
   Star,
+  X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -135,16 +136,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
     if (!prov) return
 
     const newActive = !currentActive
-    // Validation: cannot disable an active Primary or Fallback LLM
-    if (!newActive && (prov.is_default || prov.is_fallback)) {
+    // Validation: cannot disable an active Primary LLM
+    if (!newActive && prov.is_default) {
       showNotification(
         'error',
-        `Cannot disable '${prov.name}': Currently assigned as ${prov.is_default ? 'PRIMARY' : 'FALLBACK'} LLM. Assign another model first.`
+        `Cannot disable '${prov.name}': Currently assigned as PRIMARY LLM. Assign another model as Primary first.`
       )
       return
     }
 
-    setProvidersList(prev => prev.map(p => (p.id === id ? { ...p, is_active: newActive } : p)))
+    setProvidersList(prev =>
+      prev.map(p =>
+        p.id === id
+          ? { ...p, is_active: newActive, is_fallback: !newActive ? false : p.is_fallback }
+          : p
+      )
+    )
     try {
       const res = await fetch(API_ENDPOINTS.ADMIN.LLM_PROVIDER_TOGGLE(id), {
         method: 'PATCH',
@@ -194,12 +201,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
     }
   }
 
-  const handleSetProviderRole = async (id: number, role: 'default' | 'fallback') => {
+  const handleSetProviderRole = async (id: number, role: 'default' | 'fallback' | 'remove_fallback') => {
     const targetProv = providersList.find(p => p.id === id)
     if (!targetProv) return
 
-    // Validation: inactive provider (is_active === false) cannot be set as Primary or Fallback
-    if (!targetProv.is_active) {
+    // Inactive check: only if setting active role
+    if (role !== 'remove_fallback' && !targetProv.is_active) {
       showNotification(
         'error',
         `Cannot set '${targetProv.name}' as ${role === 'default' ? 'PRIMARY' : 'FALLBACK'} LLM: Provider is currently inactive (is_active = 0). Please enable status first.`
@@ -207,8 +214,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
       return
     }
 
-    // If already in that role, no action needed
-    if ((role === 'default' && targetProv.is_default) || (role === 'fallback' && targetProv.is_fallback)) {
+    // Determine effective action
+    const isTogglingFallbackOff = (role === 'fallback' && targetProv.is_fallback) || role === 'remove_fallback'
+    const effectiveRole = isTogglingFallbackOff ? 'remove_fallback' : role
+
+    // Primary cannot be unselected without assigning another model as primary
+    if (effectiveRole === 'default' && targetProv.is_default) {
       return
     }
 
@@ -217,7 +228,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
     // OPTIMISTIC UPDATE: Instant UI response with zero lag
     setProvidersList(prev =>
       prev.map(p => {
-        if (role === 'default') {
+        if (effectiveRole === 'default') {
           if (p.id === id) {
             return { ...p, is_default: true, is_fallback: false }
           } else {
@@ -231,8 +242,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
               is_fallback: (wasTargetFallback && wasThisDefault) ? true : p.is_fallback,
             }
           }
+        } else if (effectiveRole === 'remove_fallback') {
+          // Unselect fallback!
+          return {
+            ...p,
+            is_fallback: false,
+          }
         } else {
-          // role === 'fallback'
+          // effectiveRole === 'fallback'
           if (p.id === id) {
             return { ...p, is_fallback: true, is_default: false }
           } else {
@@ -259,14 +276,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ role: effectiveRole }),
       })
       const data = await res.json().catch(() => null)
       if (res.ok && data?.success) {
         if (data.providers) {
           setProvidersList(data.providers)
         }
-        showNotification('success', data.message || `Assigned as ${role.toUpperCase()} model!`)
+        showNotification('success', data.message || (effectiveRole === 'remove_fallback' ? 'Fallback model unselected' : `Assigned as ${role.toUpperCase()} model!`))
       } else {
         setProvidersList(previousList)
         showNotification('error', data?.error || (res.status === 404 ? 'Route not found (Backend restart required)' : `Server error: ${res.status}`))
@@ -990,20 +1007,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                               {/* Fallback Button */}
                               <button
                                 type="button"
-                                disabled={roleUpdatingId !== null || (prov.is_fallback && prov.is_active) || !prov.is_active}
-                                onClick={() => handleSetProviderRole(prov.id, 'fallback')}
+                                disabled={roleUpdatingId !== null || !prov.is_active}
+                                onClick={() => handleSetProviderRole(prov.id, prov.is_fallback ? 'remove_fallback' : 'fallback')}
                                 title={
                                   !prov.is_active
                                     ? 'Inactive provider cannot be set as Fallback LLM (Enable status first)'
                                     : prov.is_fallback && prov.is_active
-                                    ? 'Currently assigned as Emergency Fallback LLM'
+                                    ? 'Currently assigned as Fallback LLM (Click to unselect / remove)'
                                     : 'Click to set as Emergency Fallback LLM'
                                 }
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all duration-150 border ${
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all duration-150 border group/fb ${
                                   prov.is_fallback && prov.is_active
                                     ? isLight
-                                      ? 'bg-sky-100 text-sky-900 border-sky-300 shadow-sm cursor-default'
-                                      : 'bg-sky-500/20 text-sky-400 border-sky-500/40 shadow-sm shadow-sky-500/10 ring-1 ring-sky-500/30 cursor-default'
+                                      ? 'bg-sky-100 hover:bg-rose-50 text-sky-800 hover:text-rose-700 border-sky-300 hover:border-rose-300 shadow-sm cursor-pointer active:scale-95'
+                                      : 'bg-sky-500/20 hover:bg-rose-500/20 text-sky-400 hover:text-rose-300 border-sky-500/40 hover:border-rose-500/40 shadow-sm shadow-sky-500/10 ring-1 ring-sky-500/30 hover:ring-rose-500/30 cursor-pointer active:scale-95'
                                     : !prov.is_active
                                     ? isLight
                                       ? 'bg-gray-100/60 text-gray-400 border-gray-200 border-dashed cursor-not-allowed opacity-50'
@@ -1013,8 +1030,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ onSwitchToChat }) => {
                                       : 'bg-gray-800/60 hover:bg-gray-800 text-gray-400 border-gray-700/60 hover:text-gray-200 cursor-pointer active:scale-95'
                                 } ${roleUpdatingId === prov.id ? 'opacity-70 animate-pulse' : ''}`}
                               >
-                                <Shield className={`w-3 h-3 ${prov.is_fallback && prov.is_active ? 'fill-sky-400 text-sky-400' : 'text-gray-400'}`} />
+                                <Shield className={`w-3 h-3 ${prov.is_fallback && prov.is_active ? 'fill-sky-400 text-sky-400 group-hover/fb:fill-rose-400 group-hover/fb:text-rose-400' : 'text-gray-400'}`} />
                                 <span>{prov.is_fallback && prov.is_active ? 'Fallback' : 'Set Fallback'}</span>
+                                {prov.is_fallback && prov.is_active && (
+                                  <X className="w-3 h-3 ml-0.5 opacity-60 group-hover/fb:opacity-100 group-hover/fb:text-rose-400 transition-opacity" />
+                                )}
                               </button>
                             </div>
                           </td>
