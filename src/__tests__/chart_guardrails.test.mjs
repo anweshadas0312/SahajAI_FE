@@ -58,7 +58,21 @@ function parseMessageCodeBlock(lang, rawContent, isGenerating, isLastMessage) {
   // Strict language enforcement: ONLY explicit chart block tags
   if (normalizedLang === 'chart' || normalizedLang === 'pie' || normalizedLang === 'bar' || normalizedLang === 'line') {
     try {
-      const parsed = JSON.parse(rawContent);
+      let jsonToParse = rawContent;
+      const startBrace = jsonToParse.indexOf('{');
+      const endBrace = jsonToParse.lastIndexOf('}');
+      if (startBrace !== -1 && endBrace > startBrace) {
+        jsonToParse = jsonToParse.substring(startBrace, endBrace + 1);
+      }
+      jsonToParse = jsonToParse.replace(/new\s+Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})\s*\)/g, (_, y, m, d) => {
+        const month = String(Number(m) + 1).padStart(2, '0');
+        const day = String(d).padStart(2, '0');
+        return `"${y}-${month}-${day}"`;
+      });
+      jsonToParse = jsonToParse.replace(/new\s+Date\(\s*['"]([^'"]+)['"]\s*\)/g, '"$1"');
+      jsonToParse = jsonToParse.replace(/,\s*([}\]])/g, '$1');
+
+      const parsed = JSON.parse(jsonToParse);
       if (parsed && typeof parsed === 'object') {
         if (!parsed.type && (normalizedLang === 'pie' || normalizedLang === 'bar' || normalizedLang === 'line')) {
           parsed.type = normalizedLang;
@@ -237,5 +251,54 @@ describe('Frontend Chart Guardrails & Fallback Tests', () => {
     const parsed = parseMessageCodeBlock('chart', invalidJson, false, false);
     assert.strictEqual(parsed.type, 'limitation_notice');
     assert.match(parsed.error, /cannot display negative values/i);
+  });
+
+  test('Line chart block with JS new Date(...) syntax normalizes to ISO dates and renders cleanly', () => {
+    const jsDateBlock = `{
+  "type": "line",
+  "title": "Total Quantity Ordered by Order Date",
+  "data": [
+    {"name": new Date(2017, 0, 1), "value": 7},
+    {"name": new Date(2017, 0, 2), "value": 121},
+    {"name": new Date(2017, 0, 3), "value": 25}
+  ]
+}`;
+    const parsed = parseMessageCodeBlock('chart', jsDateBlock, false, false);
+    assert.strictEqual(parsed.type, 'chart');
+    assert.strictEqual(parsed.payload.data.length, 3);
+    assert.strictEqual(parsed.payload.data[0].name, '2017-01-01');
+    assert.strictEqual(parsed.payload.data[0].value, 7);
+    assert.strictEqual(parsed.payload.data[1].value, 121);
+    assert.strictEqual(parsed.payload.data[2].value, 25);
+  });
+
+  test('Exact order.csv Line Chart payload parses and validates successfully with 3 points', () => {
+    const payloadStr = `{
+  "type": "line",
+  "title": "Total Quantity Ordered by Order Date",
+  "data": [
+    {
+      "name": "01-Jan-17",
+      "value": 7
+    },
+    {
+      "name": "02-Jan-17",
+      "value": 121
+    },
+    {
+      "name": "03-Jan-17",
+      "value": 25
+    }
+  ]
+}`;
+    const parsed = parseMessageCodeBlock('chart', payloadStr, false, false);
+    assert.strictEqual(parsed.type, 'chart');
+    assert.strictEqual(parsed.payload.data.length, 3);
+    assert.strictEqual(parsed.payload.data[0].name, '01-Jan-17');
+    assert.strictEqual(parsed.payload.data[0].value, 7);
+    assert.strictEqual(parsed.payload.data[1].name, '02-Jan-17');
+    assert.strictEqual(parsed.payload.data[1].value, 121);
+    assert.strictEqual(parsed.payload.data[2].name, '03-Jan-17');
+    assert.strictEqual(parsed.payload.data[2].value, 25);
   });
 });

@@ -8,6 +8,7 @@ import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
+import { GlobalSearchModal } from './GlobalSearchModal'
 
 interface UserLayoutProps {
   onSwitchToAdmin?: () => void
@@ -19,8 +20,11 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   const { theme } = useTheme()
   const isLight = theme === 'light'
   const {
+    workspaces,
     currentWorkspace,
+    setCurrentWorkspace,
     currentConversationId,
+    setCurrentConversationId,
     messages,
     setMessages,
     createNewConversation,
@@ -36,6 +40,14 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
   const [loadingStatus, setLoadingStatus] = useState('Thinking...')
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('sahaj_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   const [attachedFiles, setAttachedFiles] = useState<UploadedFile[]>([])
   const [isUploadingFile, setIsUploadingFile] = useState(false)
@@ -152,6 +164,50 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
       setIsGenerating(false)
     }
   }, [currentConversationId])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sahaj_sidebar_collapsed', String(isSidebarCollapsed))
+    } catch {
+      // Ignore
+    }
+  }, [isSidebarCollapsed])
+
+  // Global keyboard shortcut: Ctrl+K / Cmd+K to toggle Global Search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsSearchOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [])
+
+  const handleSelectConversationFromSearch = (convId: string, wsId?: number) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setIsGenerating(false)
+    setLoadingStatus('Thinking...')
+    if (wsId && currentWorkspace?.id !== wsId) {
+      const targetWs = workspaces.find(w => w.id === wsId)
+      if (targetWs) {
+        setCurrentWorkspace(targetWs)
+      }
+    }
+    setCurrentConversationId(convId)
+    setIsMobileSidebarOpen(false)
+    setIsSearchOpen(false)
+  }
+
+  const handleStartNewChatFromSearch = () => {
+    handleStartNewChat()
+    setIsMobileSidebarOpen(false)
+    setIsSearchOpen(false)
+  }
 
   const handleCopyCode = (code: string, idx: number) => {
     navigator.clipboard.writeText(code)
@@ -609,6 +665,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
         onSwitchToAdmin={onSwitchToAdmin}
         onRequireAuth={onRequireAuth}
         handleStartNewChat={handleStartNewChat}
+        isSidebarCollapsed={isSidebarCollapsed}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
+        onOpenSearch={() => setIsSearchOpen(true)}
       />
 
       <div className={`flex-1 flex flex-col relative overflow-hidden h-full min-w-0 transition-colors ${isLight ? 'bg-[#f8fafc]' : 'bg-[#0b0f19]'
@@ -650,6 +709,14 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ onSwitchToAdmin, onRequi
           onRequireAuth={onRequireAuth}
         />
       </div>
+
+      {/* Global Search Modal (ChatGPT-style Command Palette) */}
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectConversation={handleSelectConversationFromSearch}
+        onStartNewChat={handleStartNewChatFromSearch}
+      />
     </div>
   )
 }
