@@ -11,6 +11,9 @@ import {
   LogIn,
   Search,
   PanelLeft,
+  Pin,
+  MoreHorizontal,
+  Pencil,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -53,6 +56,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     currentConversationId,
     setCurrentConversationId,
     deleteConversation,
+    updateConversationTitle,
+    togglePinConversation,
   } = useWorkspace()
 
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
@@ -63,12 +68,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isWorkspaceMiniOpen, setIsWorkspaceMiniOpen] = useState(false)
   const [isProfileMiniOpen, setIsProfileMiniOpen] = useState(false)
   const [isProfileMiniHelpOpen, setIsProfileMiniHelpOpen] = useState(false)
+  const [activeMenuConvId, setActiveMenuConvId] = useState<string | null>(null)
+  const [editingConvId, setEditingConvId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
 
   const profileRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<HTMLDivElement>(null)
   const recentsRef = useRef<HTMLDivElement>(null)
   const workspaceMiniRef = useRef<HTMLDivElement>(null)
   const profileMiniRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -90,10 +99,189 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setIsProfileMiniOpen(false)
         setIsProfileMiniHelpOpen(false)
       }
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setActiveMenuConvId(null)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  const handleSaveRename = (convId: string) => {
+    const trimmed = editTitle.trim()
+    if (trimmed) {
+      updateConversationTitle(convId, trimmed)
+    }
+    setEditingConvId(null)
+  }
+
+  const pinnedConversations = conversations.filter(c => Boolean(c.is_pinned))
+  const recentConversations = conversations.filter(c => !c.is_pinned)
+
+  const renderChatItem = (conv: typeof conversations[0]) => {
+    const isEditing = editingConvId === conv.id
+    const isMenuOpen = activeMenuConvId === conv.id
+    const isSelected = currentConversationId === conv.id
+
+    return (
+      <div
+        key={conv.id}
+        onClick={() => {
+          if (!isEditing) {
+            setCurrentConversationId(conv.id)
+            setIsMobileSidebarOpen(false)
+          }
+        }}
+        className={`group relative flex items-center justify-between px-3 py-2 rounded-xl text-xs transition cursor-pointer ${
+          isSelected
+            ? isLight
+              ? 'bg-amber-50 text-amber-950 font-semibold border border-amber-300'
+              : 'bg-[#1e293b] text-white font-medium border border-gray-700'
+            : isLight
+            ? 'text-gray-700 hover:bg-gray-100 hover:text-gray-950'
+            : 'text-gray-300 hover:bg-[#151c28] hover:text-gray-200'
+        }`}
+        title={conv.title || 'Untitled Conversation'}
+      >
+        {/* Title or Inline Edit Input */}
+        <div className="flex items-center truncate flex-1 min-w-0 mr-2">
+          {isEditing ? (
+            <input
+              type="text"
+              value={editTitle}
+              onChange={e => setEditTitle(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleSaveRename(conv.id)
+                if (e.key === 'Escape') setEditingConvId(null)
+              }}
+              onBlur={() => handleSaveRename(conv.id)}
+              onClick={e => e.stopPropagation()}
+              autoFocus
+              className={`w-full px-1.5 py-0.5 rounded text-xs outline-none border ${
+                isLight
+                  ? 'bg-white text-gray-900 border-amber-400'
+                  : 'bg-gray-800 text-white border-amber-500'
+              }`}
+            />
+          ) : (
+            <span className="truncate">{conv.title || 'Untitled Conversation'}</span>
+          )}
+        </div>
+
+        {/* 3-dot and Pin Buttons (matching screenshot) */}
+        {!isEditing && (
+          <div
+            className={`relative shrink-0 flex items-center gap-0.5 transition-opacity duration-150 ${
+              isMenuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            }`}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 3-dot Options Button */}
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation()
+                setActiveMenuConvId(prev => (prev === conv.id ? null : conv.id))
+              }}
+              className={`p-1 rounded-md transition cursor-pointer ${
+                isMenuOpen
+                  ? isLight ? 'text-gray-900 bg-gray-200/80' : 'text-white bg-gray-700/80'
+                  : isLight
+                  ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/60'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/60'
+              }`}
+              title="More options"
+              aria-label="More options"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {/* Pin / Unpin Button */}
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation()
+                togglePinConversation(conv.id)
+              }}
+              className={`p-1 rounded-md transition cursor-pointer ${
+                conv.is_pinned
+                  ? 'text-amber-500 hover:text-amber-600 dark:text-amber-400'
+                  : isLight
+                  ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/60'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/60'
+              }`}
+              title={conv.is_pinned ? 'Unpin chat' : 'Pin chat'}
+              aria-label={conv.is_pinned ? 'Unpin chat' : 'Pin chat'}
+            >
+              <Pin
+                className={`w-4 h-4 rotate-45 transition-transform ${
+                  conv.is_pinned ? 'fill-current text-amber-500' : ''
+                }`}
+              />
+            </button>
+
+            {/* 3-Dot Dropdown Menu Popover */}
+            {isMenuOpen && (
+              <div
+                ref={menuRef}
+                className={`absolute right-0 top-full mt-1.5 w-36 rounded-xl border shadow-xl p-1 z-[60] text-xs transition-all ${
+                  isLight
+                    ? 'bg-white border-gray-200 text-gray-800 shadow-2xl'
+                    : 'bg-[#182030] border-gray-700 text-gray-200 shadow-2xl shadow-black/80'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation()
+                    togglePinConversation(conv.id)
+                    setActiveMenuConvId(null)
+                  }}
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition cursor-pointer ${
+                    isLight ? 'hover:bg-gray-100 hover:text-black' : 'hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <Pin className={`w-3.5 h-3.5 rotate-45 ${conv.is_pinned ? 'fill-current text-amber-500' : ''}`} />
+                  <span>{conv.is_pinned ? 'Unpin chat' : 'Pin chat'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation()
+                    setEditingConvId(conv.id)
+                    setEditTitle(conv.title || '')
+                    setActiveMenuConvId(null)
+                  }}
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition cursor-pointer ${
+                    isLight ? 'hover:bg-gray-100 hover:text-black' : 'hover:bg-gray-800 hover:text-white'
+                  }`}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Rename</span>
+                </button>
+
+                <div className={`my-0.5 border-t ${isLight ? 'border-gray-200' : 'border-gray-800'}`} />
+
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation()
+                    deleteConversation(conv.id)
+                    setActiveMenuConvId(null)
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -316,13 +504,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div
                       className="px-3 pt-2 pb-1.5 text-xs font-semibold text-gray-400 select-none flex items-center justify-between"
                     >
-                      <span>Recents</span>
+                      <span>{pinnedConversations.length > 0 ? 'Chats' : 'Recents'}</span>
                       <span className="text-[10px] font-normal text-gray-400">
                         {conversations.length} chats
                       </span>
                     </div>
 
-                    <div className="space-y-0.5 mt-0.5">
+                    <div className="space-y-1 mt-0.5">
                       {conversations.length === 0 ? (
                         <div
                           className={`px-3 py-6 text-center text-xs ${
@@ -332,43 +520,125 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           No recent chats
                         </div>
                       ) : (
-                        conversations.map(conv => (
-                          <div
-                            key={conv.id}
-                            onClick={() => {
-                              setCurrentConversationId(conv.id)
-                              setIsRecentsOpen(false)
-                            }}
-                            className={`group w-full text-left px-3 py-2 rounded-xl text-xs sm:text-[13px] transition truncate cursor-pointer flex items-center justify-between ${
-                              currentConversationId === conv.id
-                                ? isLight
-                                  ? 'bg-amber-100/70 text-amber-950 font-semibold'
-                                  : 'bg-[#EAB308]/15 text-[#EAB308] font-semibold'
-                                : isLight
-                                ? 'text-gray-700 hover:bg-gray-100 hover:text-black'
-                                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                            }`}
-                            title={conv.title || 'Untitled Conversation'}
-                          >
-                            <div className="flex items-center gap-2 truncate flex-1 min-w-0 mr-1">
-                              <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'opacity-60'}`} />
-                              <span className="truncate">
-                                {conv.title || 'Untitled Conversation'}
-                              </span>
+                        <>
+                          {/* Mini Pinned Section */}
+                          {pinnedConversations.length > 0 && (
+                            <div className="mb-2 space-y-0.5">
+                              <div className="px-3 pt-1 pb-1 text-[11px] font-medium text-gray-400 select-none">
+                                Pinned
+                              </div>
+                              {pinnedConversations.map(conv => (
+                                <div
+                                  key={conv.id}
+                                  onClick={() => {
+                                    setCurrentConversationId(conv.id)
+                                    setIsRecentsOpen(false)
+                                  }}
+                                  className={`group w-full text-left px-3 py-2 rounded-xl text-xs sm:text-[13px] transition truncate cursor-pointer flex items-center justify-between ${
+                                    currentConversationId === conv.id
+                                      ? isLight
+                                        ? 'bg-amber-100/70 text-amber-950 font-semibold'
+                                        : 'bg-[#EAB308]/15 text-[#EAB308] font-semibold'
+                                      : isLight
+                                      ? 'text-gray-700 hover:bg-gray-100 hover:text-black'
+                                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                  }`}
+                                  title={conv.title || 'Untitled Conversation'}
+                                >
+                                  <div className="flex items-center gap-2 truncate flex-1 min-w-0 mr-1">
+                                    <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'opacity-60'}`} />
+                                    <span className="truncate">
+                                      {conv.title || 'Untitled Conversation'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation()
+                                        togglePinConversation(conv.id)
+                                      }}
+                                      className="p-1 text-amber-500 hover:text-amber-600 transition"
+                                      title="Unpin chat"
+                                    >
+                                      <Pin className="w-3 h-3 fill-current rotate-45" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation()
+                                        deleteConversation(conv.id)
+                                      }}
+                                      className="p-1 hover:text-red-500 transition text-gray-400"
+                                      title="Delete chat"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <button
-                              type="button"
-                              onClick={e => {
-                                e.stopPropagation()
-                                deleteConversation(conv.id)
-                              }}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 transition shrink-0"
-                              title="Delete chat"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                          )}
+
+                          {/* Mini Recents Section */}
+                          <div className="space-y-0.5">
+                            {pinnedConversations.length > 0 && (
+                              <div className="px-3 pt-1 pb-1 text-[11px] font-medium text-gray-400 select-none">
+                                Recents
+                              </div>
+                            )}
+                            {recentConversations.map(conv => (
+                              <div
+                                key={conv.id}
+                                onClick={() => {
+                                  setCurrentConversationId(conv.id)
+                                  setIsRecentsOpen(false)
+                                }}
+                                className={`group w-full text-left px-3 py-2 rounded-xl text-xs sm:text-[13px] transition truncate cursor-pointer flex items-center justify-between ${
+                                  currentConversationId === conv.id
+                                    ? isLight
+                                      ? 'bg-amber-100/70 text-amber-950 font-semibold'
+                                      : 'bg-[#EAB308]/15 text-[#EAB308] font-semibold'
+                                    : isLight
+                                    ? 'text-gray-700 hover:bg-gray-100 hover:text-black'
+                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                                }`}
+                                title={conv.title || 'Untitled Conversation'}
+                              >
+                                <div className="flex items-center gap-2 truncate flex-1 min-w-0 mr-1">
+                                  <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'opacity-60'}`} />
+                                  <span className="truncate">
+                                    {conv.title || 'Untitled Conversation'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={e => {
+                                      e.stopPropagation()
+                                      togglePinConversation(conv.id)
+                                    }}
+                                    className="p-1 text-gray-400 hover:text-amber-500 transition"
+                                    title="Pin chat"
+                                  >
+                                    <Pin className="w-3 h-3 rotate-45" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={e => {
+                                      e.stopPropagation()
+                                      deleteConversation(conv.id)
+                                    }}
+                                    className="p-1 hover:text-red-500 transition text-gray-400"
+                                    title="Delete chat"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))
+                        </>
                       )}
                     </div>
                   </div>
@@ -728,11 +998,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Conversation History for Current Workspace */}
           <div className="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1">
-            <div className={`px-1 mb-2 text-[10px] uppercase font-bold tracking-wider ${isLight ? 'text-gray-500' : 'text-gray-500'
-              }`}>
-              {currentWorkspace?.name} Chats
-            </div>
-
             {conversations.length === 0 ? (
               <div className={`text-center py-8 text-xs ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>
                 <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-30" />
@@ -740,38 +1005,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <p className={`text-[10px] mt-0.5 ${isLight ? 'text-gray-400' : 'text-gray-600'}`}>Start asking questions!</p>
               </div>
             ) : (
-              conversations.map(conv => (
-                <div
-                  key={conv.id}
-                  onClick={() => {
-                    setCurrentConversationId(conv.id)
-                    setIsMobileSidebarOpen(false)
-                  }}
-                  className={`group flex items-center justify-between p-2.5 rounded-xl text-xs transition cursor-pointer ${currentConversationId === conv.id
-                    ? isLight
-                      ? 'bg-amber-50 text-amber-950 font-bold border border-amber-300'
-                      : 'bg-[#1e293b] text-white font-medium border border-gray-700'
-                    : isLight
-                      ? 'text-gray-600 hover:bg-gray-100 hover:text-gray-950'
-                      : 'text-gray-400 hover:bg-[#151c28] hover:text-gray-200'
-                    }`}
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'opacity-60'}`} />
-                    <span className="truncate">{conv.title || 'Untitled Conversation'}</span>
+              <>
+                {/* Pinned Section: ONLY appears when at least one chat is pinned */}
+                {pinnedConversations.length > 0 && (
+                  <div className="mb-3 space-y-1">
+                    <div className="px-2 pt-1 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400 select-none">
+                      Pinned
+                    </div>
+                    {pinnedConversations.map(conv => renderChatItem(conv))}
                   </div>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation()
-                      deleteConversation(conv.id)
-                    }}
-                    className={`opacity-0 group-hover:opacity-100 p-1 transition ${isLight ? 'hover:text-red-600 text-gray-400' : 'hover:text-red-400 text-gray-500'
-                      }`}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                )}
+
+                {/* Recents Section */}
+                <div className="space-y-1">
+                  <div className="px-2 pt-1 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400 select-none">
+                    Recents
+                  </div>
+                  {recentConversations.length === 0 && pinnedConversations.length > 0 ? (
+                    <div className="px-2 py-3 text-center text-[11px] text-gray-400">
+                      No other recent chats
+                    </div>
+                  ) : (
+                    recentConversations.map(conv => renderChatItem(conv))
+                  )}
                 </div>
-              ))
+              </>
             )}
           </div>
         </div>

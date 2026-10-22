@@ -27,6 +27,7 @@ export interface Conversation {
   jailbreak: string
   first_message?: string
   message_count?: number
+  is_pinned?: boolean
   created_at?: string
   updated_at?: string
 }

@@ -18,6 +18,7 @@ interface WorkspaceContextType {
   createNewConversation: (model: string, jailbreak: string, title?: string) => Promise<string>
   deleteConversation: (id: string) => Promise<boolean>
   updateConversationTitle: (id: string, title: string) => Promise<boolean>
+  togglePinConversation: (id: string) => Promise<boolean>
   isLoadingWorkspaces: boolean
   isLoadingConversations: boolean
   refreshWorkspaces: () => Promise<void>
@@ -130,7 +131,18 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const data = await res.json()
           if (data.success) {
             if (activeWsIdRef.current === targetWsId) {
-              setConversations(data.conversations || [])
+              const rawConvs = data.conversations || []
+              let pinnedSet = new Set<string>()
+              try {
+                pinnedSet = new Set(JSON.parse(localStorage.getItem('sahaj_pinned_conv_ids') || '[]'))
+              } catch {
+                // ignore
+              }
+              const merged = rawConvs.map((c: Conversation) => ({
+                ...c,
+                is_pinned: Boolean(c.is_pinned || pinnedSet.has(c.id)),
+              }))
+              setConversations(merged)
               setIsLoadingConversations(false)
             }
             return
@@ -148,7 +160,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const stored = localStorage.getItem(localKey)
     if (stored) {
       try {
-        setConversations(JSON.parse(stored))
+        let pinnedSet = new Set<string>()
+        try {
+          pinnedSet = new Set(JSON.parse(localStorage.getItem('sahaj_pinned_conv_ids') || '[]'))
+        } catch {
+          // ignore
+        }
+        const parsed = JSON.parse(stored).map((c: Conversation) => ({
+          ...c,
+          is_pinned: Boolean(c.is_pinned || pinnedSet.has(c.id)),
+        }))
+        setConversations(parsed)
       } catch {
         setConversations([])
       }
@@ -423,6 +445,47 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return true
   }
 
+  const togglePinConversation = async (id: string) => {
+    let nextPinnedState = false
+    setConversations(prev => {
+      const target = prev.find(c => c.id === id)
+      nextPinnedState = !target?.is_pinned
+      const updated = prev.map(c => (c.id === id ? { ...c, is_pinned: nextPinnedState } : c))
+
+      // Sync to sahaj_pinned_conv_ids
+      try {
+        const pinnedSet = new Set<string>(JSON.parse(localStorage.getItem('sahaj_pinned_conv_ids') || '[]'))
+        if (nextPinnedState) {
+          pinnedSet.add(id)
+        } else {
+          pinnedSet.delete(id)
+        }
+        localStorage.setItem('sahaj_pinned_conv_ids', JSON.stringify(Array.from(pinnedSet)))
+      } catch (e) {
+        console.warn('Pinned local cache error:', e)
+      }
+
+      if (user && currentWorkspace) {
+        localStorage.setItem(`sahaj_convs_${user.id}_${currentWorkspace.id}`, JSON.stringify(updated))
+      }
+      return updated
+    })
+
+    try {
+      if (token && !token.startsWith('demo_token_')) {
+        await fetch(API_ENDPOINTS.CONVERSATIONS.PIN(id), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ is_pinned: nextPinnedState }),
+        })
+      }
+    } catch (e) {
+      console.warn('API pin conversation note:', e)
+    }
+
+    return true
+  }
+
   return (
     <WorkspaceContext.Provider
       value={{
@@ -440,6 +503,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         createNewConversation,
         deleteConversation,
         updateConversationTitle,
+        togglePinConversation,
         isLoadingWorkspaces,
         isLoadingConversations,
         refreshWorkspaces: fetchWorkspaces,

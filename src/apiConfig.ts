@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
   // Specific Conversations & Messages
   CONVERSATIONS: {
     BY_ID: (id: string | number) => p(`/api/conversations/${id}`),
+    PIN: (id: string | number) => p(`/api/conversations/${id}/pin`),
   },
 
   // Files Management
